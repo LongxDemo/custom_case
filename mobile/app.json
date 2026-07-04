@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Casey",
+    "slug": "casey",
+    "scheme": "casey",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#FF4FA3"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.casey.app"
+    },
+    "android": {
+      "package": "com.casey.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFD6EC",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Casey needs access to your photos so you can add them to your phone case design."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

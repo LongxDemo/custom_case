@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.expo.dev)",
+      "Bash(npx --yes expo install expo-linear-gradient react-native-url-polyfill)",
+      "Bash(npm create *)",
+      "Bash(curl -s -o /dev/null -w \"admin dev server HTTP %{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(npx expo *)",
+      "Bash(curl -s -o /dev/null -w \"Metro \\(8081\\) HTTP %{http_code}\\\\n\" http://localhost:8081/status)",
+      "Bash(node -p \"require\\('./mobile/package.json'\\).main\")",
+      "Bash(echo \"YES ✓  \\(main: $\\(node -p \"require\\('./mobile/package.json'\\).main\"\\)\\)\")",
+      "Bash(npx --yes expo install react-native-web @expo/metro-runtime)",
+      "Bash(curl -s -o /dev/null -w \"Expo web \\(8082\\) HTTP %{http_code}\\\\n\" http://localhost:8082/)",
+      "Bash(curl -s -o /dev/null -w \"web HTTP %{http_code}\\\\n\" \"http://localhost:8082/index.bundle?platform=web&dev=true\")",
+      "Bash(curl -s -o /dev/null -w \"web root HTTP %{http_code}\\\\n\" http://localhost:8082/)",
+      "Bash(xargs echo \"total error lines in log:\")",
+      "Bash(git config *)",
+      "Bash(echo \"name: $\\(git config user.name\\)  email: $\\(git config user.email\\)\")",
+      "Bash(gh --version)",
+      "Bash(gh auth *)"
+    ]
+  }
+}
