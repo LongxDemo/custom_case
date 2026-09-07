@@ -6,8 +6,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CasePreview } from '../src/components/CasePreview';
 import { Button, Chip, Pill, SectionHeader } from '../src/components/ui';
-import { backgrounds, phoneModels, stickerPacks, templates } from '../src/data/catalog';
-import { Layer } from '../src/data/types';
+import { backgrounds, phoneModels, platformOf, stickerPacks, templates as staticTemplates, Platform as PhonePlatform } from '../src/data/catalog';
+import { Layer, Template } from '../src/data/types';
+import { fetchTemplates, recordTemplateUse } from '../src/lib/templates';
 import { useCart } from '../src/store/cart';
 import { useDesign } from '../src/store/design';
 import { colors, radii, shadow, spacing } from '../src/theme';
@@ -26,13 +27,31 @@ export default function Home() {
   const startBlank = useDesign((s) => s.startBlank);
   const startFromTemplate = useDesign((s) => s.startFromTemplate);
 
+  const [platform, setPlatform] = React.useState<PhonePlatform>('ios');
+  const modelsForPlatform = phoneModels.filter((m) => platformOf(m) === platform);
+
+  // Gallery starts with the bundled defaults (works with zero backend) and
+  // is replaced with the live, admin-curated set once Supabase answers.
+  const [galleryTemplates, setGalleryTemplates] = React.useState<Template[]>(staticTemplates);
+  React.useEffect(() => {
+    fetchTemplates().then((remote) => {
+      if (remote && remote.length) setGalleryTemplates(remote);
+    });
+  }, []);
+
   const openBlank = () => {
     startBlank();
     router.push('/editor');
   };
 
-  const openTemplate = (id: string) => {
-    startFromTemplate(id);
+  const openWithModel = (modelId: string) => {
+    startBlank(modelId);
+    router.push('/editor');
+  };
+
+  const openTemplate = (t: Template) => {
+    recordTemplateUse(t.id);
+    startFromTemplate(t);
     router.push('/editor');
   };
 
@@ -70,6 +89,11 @@ export default function Home() {
             end={{ x: 1, y: 1 }}
             style={[styles.hero, shadow.float]}
           >
+            <LinearGradient
+              pointerEvents="none"
+              colors={['rgba(123,97,255,0.5)', 'rgba(123,97,255,0)']}
+              style={styles.heroBlob}
+            />
             <View style={{ flex: 1 }}>
               <Pill text="DIY PHONE CASE" tint="rgba(255,255,255,0.25)" />
               <Text style={styles.heroTitle}>Design it.{'\n'}Print it.{'\n'}Love it.</Text>
@@ -99,14 +123,13 @@ export default function Home() {
         <View style={styles.section}>
           <SectionHeader title="Casey Case Gallery ✨" action="Blank case" onAction={openBlank} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingRight: spacing.lg }}>
-            {templates.map((t) => (
-              <Pressable key={t.id} style={styles.tplCard} onPress={() => openTemplate(t.id)}>
+            {galleryTemplates.map((t) => (
+              <Pressable key={t.id} style={styles.tplCard} onPress={() => openTemplate(t)}>
                 <CasePreview
                   modelId={phoneModels[0].id}
                   background={t.background}
                   layers={t.layers.map((l, i) => ({ ...l, id: `${t.id}_${i}`, z: (l as Layer).z ?? i + 1 })) as Layer[]}
                   width={150}
-                  showCamera
                 />
                 <View style={{ marginTop: 10 }}>
                   {t.tag ? <Pill text={t.tag} tint={t.accent} /> : null}
@@ -134,9 +157,19 @@ export default function Home() {
         {/* Models */}
         <View style={styles.section}>
           <SectionHeader title="Pick your phone 📱" />
+          <View style={styles.segRow}>
+            <Pressable style={[styles.seg, platform === 'ios' && styles.segActive]} onPress={() => setPlatform('ios')}>
+              <Ionicons name="logo-apple" size={16} color={platform === 'ios' ? colors.white : colors.inkSoft} />
+              <Text style={[styles.segText, platform === 'ios' && { color: colors.white }]}>iPhone</Text>
+            </Pressable>
+            <Pressable style={[styles.seg, platform === 'android' && styles.segActive]} onPress={() => setPlatform('android')}>
+              <Ionicons name="logo-android" size={16} color={platform === 'android' ? colors.white : colors.inkSoft} />
+              <Text style={[styles.segText, platform === 'android' && { color: colors.white }]}>Android</Text>
+            </Pressable>
+          </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-            {phoneModels.map((m) => (
-              <Chip key={m.id} label={`${m.brand} ${m.name}`} onPress={openBlank} />
+            {modelsForPlatform.map((m) => (
+              <Chip key={m.id} label={`${m.brand} ${m.name}`} onPress={() => openWithModel(m.id)} />
             ))}
           </View>
         </View>
@@ -159,7 +192,7 @@ export default function Home() {
 
       {/* Floating CTA */}
       <View style={[styles.fab, { bottom: insets.bottom + 16 }]}>
-        <Button title="Design your case" icon="brush" size="lg" onPress={openBlank} />
+        <Button title="Design your case" icon="brush" size="lg" tone="cool" onPress={openBlank} />
       </View>
     </View>
   );
@@ -176,6 +209,7 @@ const styles = StyleSheet.create({
   badgeText: { color: colors.white, fontSize: 10, fontWeight: '800' },
 
   hero: { flexDirection: 'row', borderRadius: radii.xl, padding: spacing.xl, marginTop: 6, overflow: 'hidden' },
+  heroBlob: { position: 'absolute', width: 220, height: 220, borderRadius: 110, right: -70, top: -80 },
   heroTitle: { fontSize: 32, fontWeight: '900', color: colors.white, marginTop: 10, lineHeight: 36 },
   heroSub: { color: 'rgba(255,255,255,0.9)', fontWeight: '700', marginTop: 8, fontSize: 14 },
   heroBunny: { fontSize: 90, alignSelf: 'flex-end', marginBottom: -6 },
@@ -188,6 +222,10 @@ const styles = StyleSheet.create({
   stepLabel: { fontSize: 12, fontWeight: '700', color: colors.inkSoft, textAlign: 'center' },
 
   section: { paddingHorizontal: spacing.lg, paddingLeft: spacing.lg, marginTop: spacing.xxl },
+  segRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  seg: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: radii.pill, backgroundColor: colors.white, borderWidth: 1.5, borderColor: colors.line },
+  segActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  segText: { fontWeight: '800', color: colors.inkSoft, fontSize: 14 },
   tplCard: { width: 150 },
   tplName: { fontSize: 14, fontWeight: '800', color: colors.ink, marginTop: 4 },
 

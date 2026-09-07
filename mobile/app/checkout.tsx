@@ -44,7 +44,7 @@ export default function Checkout() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.cream }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[styles.topbar, { paddingTop: insets.top + 6 }]}>
-        <Pressable style={styles.iconBtn} onPress={() => router.back()}>
+        <Pressable style={styles.iconBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Ionicons name="chevron-back" size={22} color={colors.ink} />
         </Pressable>
         <Text style={styles.title}>Checkout 💳</Text>
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   iconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', ...shadow.soft },
   title: { fontSize: 18, fontWeight: '900', color: colors.ink },
 
-  section: { backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, ...shadow.soft },
+  section: { backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.glassBorder, ...shadow.glow },
   sectionTitle: { fontSize: 15, fontWeight: '900', color: colors.ink, marginBottom: 12 },
   fieldLabel: { fontSize: 12, fontWeight: '700', color: colors.inkSoft, marginBottom: 5 },
   input: { backgroundColor: colors.petal, borderRadius: radii.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontWeight: '600', color: colors.ink },

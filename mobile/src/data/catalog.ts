@@ -2,13 +2,53 @@ import { CaseBackground, PhoneModel, StickerPack, Template } from './types';
 
 export const BASE_PRICE_CENTS = 1990; // $19.90 per case
 
+// Camera cutout is a normalized (0..1) guide rectangle drawn on the case preview.
+// iPhone Pro = square top-left cluster · iPhone = smaller cluster ·
+// Samsung = tall vertical strip top-left · Pixel = wide horizontal bar.
+const IP_PRO_CAM = { x: 0.05, y: 0.04, w: 0.36, h: 0.26 };
+const IP_CAM = { x: 0.05, y: 0.04, w: 0.3, h: 0.2 };
+const SS_CAM = { x: 0.06, y: 0.05, w: 0.16, h: 0.26 };
+const PIXEL_CAM = { x: 0.08, y: 0.07, w: 0.84, h: 0.12 };
+const OTHER_CAM = { x: 0.06, y: 0.05, w: 0.28, h: 0.24 };
+
+export type Platform = 'ios' | 'android';
+/** iPhone → iOS, everything else → Android. */
+export const platformOf = (m: PhoneModel): Platform => (m.brand === 'iPhone' ? 'ios' : 'android');
+
 export const phoneModels: PhoneModel[] = [
-  { id: 'ip15pm', brand: 'iPhone', name: '15 Pro Max', aspect: 0.49, camera: { x: 0.06, y: 0.05, w: 0.34, h: 0.24 } },
-  { id: 'ip15', brand: 'iPhone', name: '15 / 15 Pro', aspect: 0.49, camera: { x: 0.06, y: 0.05, w: 0.32, h: 0.22 } },
-  { id: 'ip14', brand: 'iPhone', name: '14 / 13', aspect: 0.49, camera: { x: 0.06, y: 0.05, w: 0.3, h: 0.2 } },
-  { id: 's24u', brand: 'Samsung', name: 'Galaxy S24 Ultra', aspect: 0.46, camera: { x: 0.06, y: 0.05, w: 0.16, h: 0.28 } },
-  { id: 's24', brand: 'Samsung', name: 'Galaxy S24', aspect: 0.47, camera: { x: 0.06, y: 0.05, w: 0.16, h: 0.24 } },
-  { id: 'pixel8', brand: 'Google', name: 'Pixel 8 Pro', aspect: 0.48, camera: { x: 0.08, y: 0.08, w: 0.84, h: 0.12 } },
+  // iPhone
+  { id: 'ip17pm', brand: 'iPhone', name: '17 Pro Max', aspect: 0.46, camera: IP_PRO_CAM },
+  { id: 'ip17p', brand: 'iPhone', name: '17 Pro', aspect: 0.46, camera: IP_PRO_CAM },
+  { id: 'ip17air', brand: 'iPhone', name: 'Air', aspect: 0.48, camera: IP_CAM },
+  { id: 'ip17', brand: 'iPhone', name: '17', aspect: 0.47, camera: IP_CAM },
+  { id: 'ip16pm', brand: 'iPhone', name: '16 Pro Max', aspect: 0.46, camera: IP_PRO_CAM },
+  { id: 'ip16p', brand: 'iPhone', name: '16 Pro', aspect: 0.46, camera: IP_PRO_CAM },
+  { id: 'ip16', brand: 'iPhone', name: '16 / 16 Plus', aspect: 0.48, camera: IP_CAM },
+  { id: 'ip15pm', brand: 'iPhone', name: '15 Pro Max', aspect: 0.49, camera: IP_PRO_CAM },
+  { id: 'ip15', brand: 'iPhone', name: '15 / 15 Pro', aspect: 0.49, camera: IP_CAM },
+  { id: 'ip14', brand: 'iPhone', name: '14 / 13', aspect: 0.49, camera: IP_CAM },
+  { id: 'ip12', brand: 'iPhone', name: '12 / 11', aspect: 0.49, camera: IP_CAM },
+  { id: 'ipse', brand: 'iPhone', name: 'SE (2022)', aspect: 0.49, camera: { x: 0.05, y: 0.04, w: 0.2, h: 0.12 } },
+  // Samsung
+  { id: 's24u', brand: 'Samsung', name: 'Galaxy S24 Ultra', aspect: 0.46, camera: SS_CAM },
+  { id: 's24p', brand: 'Samsung', name: 'Galaxy S24+', aspect: 0.46, camera: SS_CAM },
+  { id: 's24', brand: 'Samsung', name: 'Galaxy S24', aspect: 0.47, camera: SS_CAM },
+  { id: 's23u', brand: 'Samsung', name: 'Galaxy S23 Ultra', aspect: 0.45, camera: SS_CAM },
+  { id: 's23', brand: 'Samsung', name: 'Galaxy S23', aspect: 0.48, camera: SS_CAM },
+  { id: 'a55', brand: 'Samsung', name: 'Galaxy A55 / A54', aspect: 0.47, camera: SS_CAM },
+  // Case fits the phone closed (folded), which is nearly square — not the unfolded tall shape.
+  { id: 'zflip5', brand: 'Samsung', name: 'Galaxy Z Flip 5', aspect: 0.84, camera: SS_CAM },
+  { id: 'zfold5', brand: 'Samsung', name: 'Galaxy Z Fold 5', aspect: 0.44, camera: SS_CAM },
+  // Google
+  { id: 'pixel9p', brand: 'Google', name: 'Pixel 9 Pro', aspect: 0.47, camera: PIXEL_CAM },
+  { id: 'pixel8pro', brand: 'Google', name: 'Pixel 8 Pro', aspect: 0.48, camera: PIXEL_CAM },
+  { id: 'pixel8', brand: 'Google', name: 'Pixel 8 / 8a', aspect: 0.47, camera: PIXEL_CAM },
+  { id: 'pixel7', brand: 'Google', name: 'Pixel 7', aspect: 0.48, camera: PIXEL_CAM },
+  // Others
+  { id: 'xiaomi14', brand: 'Xiaomi', name: 'Xiaomi 14', aspect: 0.46, camera: OTHER_CAM },
+  { id: 'redmi13', brand: 'Xiaomi', name: 'Redmi Note 13', aspect: 0.46, camera: OTHER_CAM },
+  { id: 'oneplus12', brand: 'OnePlus', name: 'OnePlus 12', aspect: 0.46, camera: OTHER_CAM },
+  { id: 'oppo', brand: 'OPPO', name: 'Reno 11', aspect: 0.46, camera: OTHER_CAM },
 ];
 
 export const backgrounds: CaseBackground[] = [

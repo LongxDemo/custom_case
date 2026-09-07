@@ -16,10 +16,10 @@ import {
 } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CANVAS_BASE } from '../src/components/CasePreview';
+import { CANVAS_BASE, CameraModule, camStyleFor } from '../src/components/CasePreview';
 import { EditableLayer } from '../src/components/EditableLayer';
 import { Button, Chip } from '../src/components/ui';
-import { backgrounds, phoneModels, stickerPacks } from '../src/data/catalog';
+import { backgrounds, phoneModels, platformOf, stickerPacks, Platform as PhonePlatform } from '../src/data/catalog';
 import { phoneModels as models } from '../src/data/catalog';
 import { TextLayer } from '../src/data/types';
 import { useCart } from '../src/store/cart';
@@ -27,6 +27,7 @@ import { formatPrice } from '../src/store/cart';
 import { BASE_PRICE_CENTS } from '../src/data/catalog';
 import { useDesign } from '../src/store/design';
 import { saveDesign } from '../src/lib/sync';
+import { isCurrentUserAdmin, publishTemplate } from '../src/lib/templates';
 import { colors, radii, shadow, spacing } from '../src/theme';
 
 type Tool = 'photo' | 'text' | 'stickers' | 'color' | 'model';
@@ -36,6 +37,7 @@ export default function Editor() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: screenW } = useWindowDimensions();
+  const [stageH, setStageH] = useState(0);
 
   const design = useDesign((s) => s.design);
   const selectedId = useDesign((s) => s.selectedId);
@@ -58,12 +60,48 @@ export default function Editor() {
   const [draftText, setDraftText] = useState('');
   const [capturing, setCapturing] = useState(false);
 
+  // Admin-only: design a case here, then publish it straight to the Casey
+  // Case Gallery on the home screen — no separate tool needed.
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [publishModal, setPublishModal] = useState(false);
+  const [publishName, setPublishName] = useState('');
+  const [publishTag, setPublishTag] = useState('');
+  const [publishAccent, setPublishAccent] = useState(TEXT_COLORS[2]);
+  const [publishing, setPublishing] = useState(false);
+  React.useEffect(() => {
+    isCurrentUserAdmin().then(setIsAdmin);
+  }, []);
+
+  const submitPublish = async () => {
+    if (!publishName.trim()) return;
+    setPublishing(true);
+    const ok = await publishTemplate(design, {
+      name: publishName.trim(),
+      tag: publishTag.trim() || undefined,
+      accent: publishAccent,
+    });
+    setPublishing(false);
+    setPublishModal(false);
+    if (ok) {
+      Alert.alert('Published 🎉', `"${publishName.trim()}" is now live on the Casey Case Gallery.`);
+      setPublishName('');
+      setPublishTag('');
+    } else {
+      Alert.alert('Couldn’t publish', 'Something went wrong — please try again.');
+    }
+  };
+
   const canvasRef = useRef<View>(null);
   const [canvasOrigin, setCanvasOrigin] = useState({ x: 0, y: 0 });
   const measureCanvas = () => canvasRef.current?.measureInWindow?.((x, y) => setCanvasOrigin({ x, y }));
 
   const model = models.find((m) => m.id === design.modelId) ?? models[0];
-  const canvasW = Math.min(screenW - 48, 340);
+  // Constrain by both the stage's measured width AND height so the whole case
+  // (camera included) always fits on-screen — on a short/wide desktop window
+  // the tall case would otherwise overflow past the visible viewport.
+  const canvasWByWidth = Math.min(screenW - 48, 340);
+  const canvasWByHeight = stageH > 0 ? (stageH - 24) * model.aspect : canvasWByWidth;
+  const canvasW = Math.max(160, Math.min(canvasWByWidth, canvasWByHeight));
   const canvasH = canvasW / model.aspect;
   const scale = canvasW / CANVAS_BASE;
   const radius = canvasW * 0.14;
@@ -128,21 +166,28 @@ export default function Editor() {
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
       {/* Top bar */}
       <View style={[styles.topbar, { paddingTop: insets.top + 6 }]}>
-        <Pressable style={styles.iconBtn} onPress={() => router.back()}>
+        <Pressable style={styles.iconBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Ionicons name="close" size={22} color={colors.ink} />
         </Pressable>
         <View style={{ alignItems: 'center' }}>
           <Text style={styles.title}>Casey Studio</Text>
           <Text style={styles.subtitle}>{model.brand} {model.name}</Text>
         </View>
-        <Pressable style={styles.nextBtn} onPress={handleNext}>
-          <Text style={styles.nextText}>Next</Text>
-          <Ionicons name="arrow-forward" size={16} color={colors.white} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {isAdmin && (
+            <Pressable style={styles.iconBtn} onPress={() => setPublishModal(true)}>
+              <Ionicons name="star" size={20} color={colors.iris} />
+            </Pressable>
+          )}
+          <Pressable style={styles.nextBtn} onPress={handleNext}>
+            <Text style={styles.nextText}>Next</Text>
+            <Ionicons name="arrow-forward" size={16} color={colors.white} />
+          </Pressable>
+        </View>
       </View>
 
       {/* Canvas */}
-      <View style={styles.stage}>
+      <View style={styles.stage} onLayout={(e) => setStageH(e.nativeEvent.layout.height)}>
         <Pressable style={StyleSheet.absoluteFill} onPress={() => select(null)} />
         <View ref={canvasRef} collapsable={false} onLayout={measureCanvas} style={[styles.canvas, { width: canvasW, height: canvasH, borderRadius: radius }]}>
           <LinearGradient
@@ -164,21 +209,10 @@ export default function Editor() {
               onChange={updateLayer}
             />
           ))}
-          {!capturing && model.camera ? (
-            <View
-              pointerEvents="none"
-              style={{
-                position: 'absolute',
-                left: model.camera.x * canvasW,
-                top: model.camera.y * canvasH,
-                width: model.camera.w * canvasW,
-                height: model.camera.h * canvasH,
-                borderRadius: Math.min(model.camera.w * canvasW, model.camera.h * canvasH) * 0.4,
-                backgroundColor: 'rgba(20,16,24,0.22)',
-                borderWidth: 2,
-                borderColor: 'rgba(255,255,255,0.35)',
-              }}
-            />
+          {!capturing ? (
+            <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+              <CameraModule style={camStyleFor(model)} width={canvasW} height={canvasH} />
+            </View>
           ) : null}
         </View>
 
@@ -206,6 +240,13 @@ export default function Editor() {
 
       {/* Tool panel */}
       <View style={[styles.panelWrap, { paddingBottom: insets.bottom + 8 }]}>
+        <LinearGradient
+          pointerEvents="none"
+          colors={[colors.gradientCool[0], colors.gradientCool[1], 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.panelGlassEdge}
+        />
         <ToolPanel
           tool={tool}
           activePack={activePack}
@@ -252,6 +293,48 @@ export default function Editor() {
               multiline
             />
             <Button title="Done" icon="checkmark" onPress={commitText} style={{ marginTop: 12 }} />
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Publish to gallery modal (admin-only) */}
+      <Modal visible={publishModal} transparent animationType="fade" onRequestClose={() => setPublishModal(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setPublishModal(false)}>
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Publish to Gallery ✨</Text>
+            <Text style={styles.panelHint}>Live on the Casey Case Gallery for every customer to browse and tap-to-design.</Text>
+            <TextInput
+              value={publishName}
+              onChangeText={setPublishName}
+              placeholder="Style name (e.g. Stan 4 Life)"
+              placeholderTextColor={colors.inkFaint}
+              style={[styles.input, { marginTop: 12, minHeight: 44 }]}
+              autoFocus
+            />
+            <TextInput
+              value={publishTag}
+              onChangeText={setPublishTag}
+              placeholder="Tag (optional — e.g. Trending, New)"
+              placeholderTextColor={colors.inkFaint}
+              style={[styles.input, { marginTop: 10, minHeight: 44 }]}
+            />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 12 }}>
+              {TEXT_COLORS.map((c) => (
+                <Pressable
+                  key={c}
+                  onPress={() => setPublishAccent(c)}
+                  style={[styles.colorDot, { backgroundColor: c }, publishAccent === c && styles.colorDotActive]}
+                />
+              ))}
+            </ScrollView>
+            <Button
+              title={publishing ? 'Publishing…' : 'Publish'}
+              icon="star"
+              loading={publishing}
+              disabled={!publishName.trim() || publishing}
+              onPress={submitPublish}
+              style={{ marginTop: 4, opacity: publishName.trim() ? 1 : 0.5 }}
+            />
           </Pressable>
         </Pressable>
       </Modal>
@@ -359,15 +442,7 @@ function ToolPanel(props: {
   }
 
   if (tool === 'model') {
-    return (
-      <View style={styles.panel}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-          {phoneModels.map((m) => (
-            <Chip key={m.id} label={`${m.brand} ${m.name}`} active={props.modelId === m.id} onPress={() => props.onSetModel(m.id)} />
-          ))}
-        </ScrollView>
-      </View>
-    );
+    return <ModelPanel modelId={props.modelId} onSetModel={props.onSetModel} />;
   }
 
   // stickers
@@ -389,12 +464,47 @@ function ToolPanel(props: {
   );
 }
 
+function ModelPanel({ modelId, onSetModel }: { modelId: string; onSetModel: (id: string) => void }) {
+  const current = phoneModels.find((m) => m.id === modelId) ?? phoneModels[0];
+  const [platform, setPlatform] = useState<PhonePlatform>(platformOf(current));
+  const list = phoneModels.filter((m) => platformOf(m) === platform);
+
+  const choosePlatform = (p: PhonePlatform) => {
+    setPlatform(p);
+    // jump to the first model of the new platform so the case shape updates
+    if (platformOf(current) !== p) {
+      const first = phoneModels.find((m) => platformOf(m) === p);
+      if (first) onSetModel(first.id);
+    }
+  };
+
+  return (
+    <View style={styles.panel}>
+      <View style={styles.segRow}>
+        <Pressable style={[styles.seg, platform === 'ios' && styles.segActive]} onPress={() => choosePlatform('ios')}>
+          <Ionicons name="logo-apple" size={16} color={platform === 'ios' ? colors.white : colors.inkSoft} />
+          <Text style={[styles.segText, platform === 'ios' && { color: colors.white }]}>iPhone</Text>
+        </Pressable>
+        <Pressable style={[styles.seg, platform === 'android' && styles.segActive]} onPress={() => choosePlatform('android')}>
+          <Ionicons name="logo-android" size={16} color={platform === 'android' ? colors.white : colors.inkSoft} />
+          <Text style={[styles.segText, platform === 'android' && { color: colors.white }]}>Android</Text>
+        </Pressable>
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+        {list.map((m) => (
+          <Chip key={m.id} label={`${m.brand} ${m.name}`} active={modelId === m.id} onPress={() => onSetModel(m.id)} />
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingBottom: 8 },
   iconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', ...shadow.soft },
   title: { fontSize: 16, fontWeight: '900', color: colors.primaryDark },
   subtitle: { fontSize: 11, fontWeight: '600', color: colors.inkFaint },
-  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.primary, paddingVertical: 9, paddingHorizontal: 16, borderRadius: radii.pill, ...shadow.soft },
+  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.primary, paddingVertical: 9, paddingHorizontal: 16, borderRadius: radii.pill, ...shadow.glow },
   nextText: { color: colors.white, fontWeight: '800', fontSize: 14 },
 
   stage: { flex: 1, alignItems: 'center', justifyContent: 'center', userSelect: 'none' },
@@ -407,9 +517,14 @@ const styles = StyleSheet.create({
   actionLabel: { fontWeight: '700', fontSize: 13 },
 
   panelWrap: { backgroundColor: colors.white, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, paddingTop: 14, ...shadow.float },
+  panelGlassEdge: { position: 'absolute', top: 0, left: 24, right: 24, height: 3, borderRadius: 2 },
   panel: { minHeight: 92, paddingHorizontal: spacing.lg, justifyContent: 'center' },
   panelHint: { color: colors.inkFaint, fontWeight: '600', marginTop: 10, fontSize: 13 },
   stickerBtn: { width: 52, height: 52, borderRadius: radii.md, backgroundColor: colors.petal, alignItems: 'center', justifyContent: 'center' },
+  segRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  seg: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: radii.pill, backgroundColor: colors.petal, borderWidth: 1.5, borderColor: colors.line },
+  segActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  segText: { fontWeight: '800', color: colors.inkSoft, fontSize: 14 },
   stepBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.blush, alignItems: 'center', justifyContent: 'center' },
   colorDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: colors.line },
   colorDotActive: { borderColor: colors.primary, borderWidth: 3 },
@@ -422,7 +537,7 @@ const styles = StyleSheet.create({
   tabIcon: { width: 46, height: 34, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },
   tabLabel: { fontSize: 11, fontWeight: '700', color: colors.inkSoft },
 
-  priceTag: { position: 'absolute', right: spacing.lg, backgroundColor: colors.ink, paddingVertical: 5, paddingHorizontal: 12, borderRadius: radii.pill },
+  priceTag: { position: 'absolute', right: spacing.lg, backgroundColor: colors.ink, paddingVertical: 5, paddingHorizontal: 12, borderRadius: radii.pill, ...shadow.glow },
   priceTagText: { color: colors.white, fontWeight: '800', fontSize: 12 },
 
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(20,16,24,0.4)', justifyContent: 'center', paddingHorizontal: spacing.xl },

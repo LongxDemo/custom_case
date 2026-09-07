@@ -94,6 +94,9 @@ export type Template = {
   /** layers without ids/positions resolved — cloned into a fresh design */
   layers: LayerSpec[];
   accent: string; // card tint for the gallery
+  /** present when loaded from Supabase; absent for the bundled catalog defaults */
+  usesCount?: number;
+  active?: boolean;
 };
 
 export type CartItem = {

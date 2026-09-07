@@ -27,7 +27,13 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "static",
+      "name": "Casey — DIY Phone Case Studio",
+      "shortName": "Casey",
+      "themeColor": "#FF3E9A",
+      "backgroundColor": "#FFF5FA",
+      "display": "standalone"
     },
     "plugins": [
       "expo-router",

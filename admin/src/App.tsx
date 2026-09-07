@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { CasePreview } from './components/CasePreview';
 import { hasSupabase, supabase } from './lib/supabase';
 import { MODELS } from './lib/types';
-import type { DesignRow, FrontPage, OrderRow } from './lib/types';
-import { mockDesigns, mockFrontPage, mockOrders } from './mock';
+import type { DesignRow, FrontPage, OrderRow, TemplateRow } from './lib/types';
+import { mockDesigns, mockFrontPage, mockOrders, mockTemplates } from './mock';
 
-type Page = 'overview' | 'front' | 'designs' | 'orders';
+type Page = 'overview' | 'front' | 'designs' | 'orders' | 'gallery';
 const ORDER_STATUSES = ['pending', 'paid', 'printing', 'shipped', 'ready_pickup', 'completed', 'cancelled'];
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 
@@ -39,6 +39,7 @@ export default function App() {
         <NavItem icon="📊" label="Overview" active={page === 'overview'} onClick={() => setPage('overview')} />
         <NavItem icon="🏠" label="Front Page" active={page === 'front'} onClick={() => setPage('front')} />
         <NavItem icon="🎨" label="Designs" active={page === 'designs'} onClick={() => setPage('designs')} />
+        <NavItem icon="✨" label="Gallery" active={page === 'gallery'} onClick={() => setPage('gallery')} />
         <NavItem icon="📦" label="Orders" active={page === 'orders'} onClick={() => setPage('orders')} />
         <div className="nav-spacer" />
         <div className="nav-user">{email}</div>
@@ -49,6 +50,7 @@ export default function App() {
         {page === 'overview' && <Overview />}
         {page === 'front' && <FrontPageEditor />}
         {page === 'designs' && <Designs />}
+        {page === 'gallery' && <Gallery />}
         {page === 'orders' && <Orders />}
       </main>
     </div>
@@ -136,10 +138,12 @@ function Stat({ n, l }: { n: string; l: string }) {
 function FrontPageEditor() {
   const [fp, setFp] = useState<FrontPage>(mockFrontPage);
   const [saved, setSaved] = useState(false);
+  const [templates, setTemplates] = useState<TemplateRow[]>(mockTemplates);
 
   useEffect(() => {
     if (!supabase) return;
     supabase.from('front_page').select('*').eq('id', 1).single().then(({ data }) => data && setFp(data as FrontPage));
+    supabase.from('templates').select('*').eq('active', true).order('sort', { ascending: true }).then(({ data }) => data && setTemplates(data as TemplateRow[]));
   }, []);
 
   const save = async () => {
@@ -162,18 +166,19 @@ function FrontPageEditor() {
           <div>
             <label>Featured templates</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {['t-stan', 't-love', 't-bunny', 't-idol'].map((id) => {
-                const on = fp.featured_template_ids.includes(id);
+              {templates.length === 0 && <span className="page-sub" style={{ margin: 0 }}>No gallery styles yet — add some in the Gallery tab.</span>}
+              {templates.map((t) => {
+                const on = fp.featured_template_ids.includes(t.id);
                 return (
-                  <button key={id} className={`chip-pick ${on ? 'on' : ''}`} onClick={() => set({ featured_template_ids: on ? fp.featured_template_ids.filter((x) => x !== id) : [...fp.featured_template_ids, id] })}>
-                    {on ? '✓ ' : ''}{id.replace('t-', '')}
+                  <button key={t.id} className={`chip-pick ${on ? 'on' : ''}`} onClick={() => set({ featured_template_ids: on ? fp.featured_template_ids.filter((x) => x !== t.id) : [...fp.featured_template_ids, t.id] })}>
+                    {on ? '✓ ' : ''}{t.name}
                   </button>
                 );
               })}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <button className="btn" onClick={save}>Save changes</button>
+            <button className="btn cool" onClick={save}>Save changes</button>
             {saved && <span style={{ color: 'var(--success)', fontWeight: 700 }}>Saved ✓</span>}
           </div>
         </div>
@@ -204,6 +209,101 @@ function Designs() {
               <div className="design-meta">
                 {MODELS[d.model_id ?? '']?.name ?? d.model_id}<br />
                 {d.user_id ? '👤 member' : '👻 guest'} · {new Date(d.created_at).toLocaleDateString()}
+              </div>
+              <button className="btn soft tpl-promote" onClick={() => promoteDesign(d)}>⭐ Add to Gallery</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+async function promoteDesign(d: DesignRow) {
+  if (!d.background) {
+    window.alert("This design has no background set — can't promote it.");
+    return;
+  }
+  const name = window.prompt('Gallery style name:', '');
+  if (!name || !name.trim()) return;
+  const tag = window.prompt('Tag (optional — e.g. Trending, New):', '') ?? undefined;
+  if (!supabase) {
+    window.alert('Connect Supabase to publish to the gallery — this is demo mode only.');
+    return;
+  }
+  const id = `t-${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 40)}-${Math.random().toString(36).slice(2, 6)}`;
+  const { error } = await supabase.from('templates').insert({
+    id,
+    name: name.trim(),
+    tag: tag?.trim() || null,
+    accent: '#FF3E9A',
+    background: d.background,
+    layers: d.layers,
+    active: true,
+  });
+  window.alert(error ? `Failed: ${error.message}` : `"${name.trim()}" added to the Casey Case Gallery ✨`);
+}
+
+/* ───────────────────────── Gallery ───────────────────────── */
+function Gallery() {
+  const [templates, setTemplates] = useState<TemplateRow[]>(mockTemplates);
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.from('templates').select('*').order('sort', { ascending: true }).then(({ data }) => data && setTemplates(data as TemplateRow[]));
+  }, []);
+
+  const patch = async (id: string, changes: Partial<TemplateRow>) => {
+    setTemplates((ts) => ts.map((t) => (t.id === id ? { ...t, ...changes } : t)));
+    if (supabase) await supabase.from('templates').update(changes).eq('id', id);
+  };
+
+  const remove = async (id: string) => {
+    if (!window.confirm('Remove this style from the gallery?')) return;
+    setTemplates((ts) => ts.filter((t) => t.id !== id));
+    if (supabase) await supabase.from('templates').delete().eq('id', id);
+  };
+
+  const sorted = [...templates].sort((a, b) => a.sort - b.sort);
+  const mostTried = Math.max(1, ...templates.map((t) => t.uses_count));
+
+  return (
+    <>
+      <h1 className="page-title">Casey Case Gallery</h1>
+      <p className="page-sub">
+        Styles customers browse on the home screen — published from the mobile editor or promoted from a customer design. {templates.length} total.
+      </p>
+      {sorted.length === 0 ? (
+        <div className="empty">No gallery styles yet 🐰 — publish one from the mobile editor, or add one from Designs.</div>
+      ) : (
+        <div className="tpl-grid">
+          {sorted.map((t) => (
+            <div className="card tpl-card" key={t.id}>
+              <CasePreview modelId={null} background={t.background} layers={t.layers} width={140} />
+              <div className="tpl-info">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <strong>{t.name}</strong>
+                  {t.tag && <span className="badge">{t.tag}</span>}
+                </div>
+                <div className="tpl-uses">
+                  <div className="tpl-uses-bar"><div className="tpl-uses-fill" style={{ width: `${Math.round((t.uses_count / mostTried) * 100)}%` }} /></div>
+                  <span>{t.uses_count.toLocaleString()} tried</span>
+                </div>
+              </div>
+              <div className="tpl-controls">
+                <button className={`chip-pick ${t.active ? 'on' : ''}`} onClick={() => patch(t.id, { active: !t.active })}>
+                  {t.active ? '✓ Active' : 'Hidden'}
+                </button>
+                <button className={`chip-pick ${t.featured ? 'on' : ''}`} onClick={() => patch(t.id, { featured: !t.featured })}>
+                  {t.featured ? '★ Featured' : 'Feature'}
+                </button>
+                <input
+                  className="tpl-sort-input"
+                  type="number"
+                  value={t.sort}
+                  onChange={(e) => patch(t.id, { sort: Number(e.target.value) || 0 })}
+                  title="Sort order"
+                />
+                <button className="tpl-delete" onClick={() => remove(t.id)} title="Remove from gallery">🗑️</button>
               </div>
             </div>
           ))}

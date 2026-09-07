@@ -1,4 +1,4 @@
-import type { DesignRow, FrontPage, OrderRow } from './lib/types';
+import type { DesignRow, FrontPage, OrderRow, TemplateRow } from './lib/types';
 
 export const mockFrontPage: FrontPage = {
   id: 1,
@@ -33,6 +33,45 @@ export const mockDesigns: DesignRow[] = [
     layers: [
       { id: 'a', kind: 'sticker', emoji: '🐰', size: 120, tx: 0, ty: -30, scale: 1, rotation: 0, z: 2 },
       { id: 'b', kind: 'text', text: 'be a cutie', color: '#D6006E', fontSize: 30, fontWeight: '800', align: 'center', tx: 0, ty: 110, scale: 1, rotation: 0, z: 2 },
+    ],
+  },
+];
+
+export const mockTemplates: TemplateRow[] = [
+  {
+    id: 't-stan', name: 'Stan 4 Life', tag: 'Trending', accent: '#FF3E9A', active: true, featured: true, sort: 0, uses_count: 842,
+    created_at: new Date(Date.now() - 30 * 86400e3).toISOString(),
+    background: { id: 'midnight', name: 'Midnight Stan', colors: ['#2B1B3D', '#141018'] },
+    layers: [
+      { id: 'a', kind: 'text', text: 'STAN\n4 LIFE', color: '#FF3E9A', fontSize: 46, fontWeight: '900', align: 'center', tx: 0, ty: -40, scale: 1, rotation: 0, z: 2 },
+      { id: 'b', kind: 'sticker', emoji: '🖤', size: 60, tx: -70, ty: 90, scale: 1, rotation: -0.2, z: 1 },
+    ],
+  },
+  {
+    id: 't-love', name: 'Love Print Stan', tag: 'Casey pick', accent: '#FF7EC0', active: true, featured: true, sort: 1, uses_count: 611,
+    created_at: new Date(Date.now() - 26 * 86400e3).toISOString(),
+    background: { id: 'bubblegum', name: 'Bubblegum', colors: ['#FF7EC0', '#FF3E9A'] },
+    layers: [
+      { id: 'a', kind: 'text', text: 'love.\nprint.\nstan.', color: '#FFFFFF', fontSize: 40, fontWeight: '800', align: 'left', tx: -30, ty: 0, scale: 1, rotation: 0, z: 2 },
+      { id: 'b', kind: 'sticker', emoji: '🐰', size: 64, tx: 70, ty: 150, scale: 1, rotation: 0, z: 1 },
+    ],
+  },
+  {
+    id: 't-bunny', name: 'Bunny Blush', tag: 'New', accent: '#C8B6FF', active: true, featured: false, sort: 2, uses_count: 203,
+    created_at: new Date(Date.now() - 6 * 86400e3).toISOString(),
+    background: { id: 'cotton', name: 'Cotton Candy', colors: ['#FFD6EC', '#C8B6FF'] },
+    layers: [
+      { id: 'a', kind: 'sticker', emoji: '🐰', size: 120, tx: 0, ty: -30, scale: 1, rotation: 0, z: 2 },
+      { id: 'b', kind: 'text', text: 'be a cutie', color: '#D6006E', fontSize: 30, fontWeight: '800', align: 'center', tx: 0, ty: 110, scale: 1, rotation: 0, z: 2 },
+    ],
+  },
+  {
+    id: 't-idol', name: 'Idol Frame', tag: 'Photo', accent: '#FF5470', active: true, featured: true, sort: 3, uses_count: 97,
+    created_at: new Date(Date.now() - 2 * 86400e3).toISOString(),
+    background: { id: 'sunset', name: 'K-Sunset', colors: ['#FFC3A0', '#FF5470'] },
+    layers: [
+      { id: 'a', kind: 'text', text: '♡ my bias ♡', color: '#FFFFFF', fontSize: 26, fontWeight: '800', align: 'center', tx: 0, ty: 150, scale: 1, rotation: 0, z: 3 },
+      { id: 'b', kind: 'sticker', emoji: '📸', size: 50, tx: 0, ty: -160, scale: 1, rotation: 0, z: 2 },
     ],
   },
 ];

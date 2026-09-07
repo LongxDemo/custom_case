@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { backgrounds, phoneModels, templates } from '../data/catalog';
+import { backgrounds, phoneModels } from '../data/catalog';
 import { CaseBackground, Design, Layer, Template } from '../data/types';
 
 let counter = 0;
@@ -29,7 +29,7 @@ type DesignState = {
   design: Design;
   selectedId: string | null;
   startBlank: (modelId?: string) => void;
-  startFromTemplate: (templateId: string, modelId?: string) => void;
+  startFromTemplate: (template: Template, modelId?: string) => void;
   setModel: (modelId: string) => void;
   setBackground: (bg: CaseBackground) => void;
   select: (id: string | null) => void;
@@ -51,10 +51,8 @@ export const useDesign = create<DesignState>((set, get) => ({
 
   startBlank: (modelId) => set({ design: blankDesign(modelId ?? get().design.modelId), selectedId: null }),
 
-  startFromTemplate: (templateId, modelId) => {
-    const t = templates.find((x) => x.id === templateId);
-    if (!t) return;
-    set({ design: fromTemplate(t, modelId ?? get().design.modelId), selectedId: null });
+  startFromTemplate: (template, modelId) => {
+    set({ design: fromTemplate(template, modelId ?? get().design.modelId), selectedId: null });
   },
 
   setModel: (modelId) =>

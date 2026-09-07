@@ -46,7 +46,7 @@ export default function Account() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
       <View style={[styles.topbar, { paddingTop: insets.top + 6 }]}>
-        <Pressable style={styles.iconBtn} onPress={() => router.back()}>
+        <Pressable style={styles.iconBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Ionicons name="chevron-back" size={22} color={colors.ink} />
         </Pressable>
         <Text style={styles.title}>Account</Text>
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   heroName: { fontSize: 20, fontWeight: '900', color: colors.ink, marginTop: 12 },
   heroSub: { fontSize: 13, fontWeight: '600', color: colors.inkFaint, marginTop: 2 },
 
-  card: { backgroundColor: colors.white, borderRadius: radii.xl, padding: spacing.xl, ...shadow.card },
+  card: { backgroundColor: colors.white, borderRadius: radii.xl, padding: spacing.xl, borderWidth: 1, borderColor: colors.glassBorder, ...shadow.glow },
   cardTitle: { fontSize: 20, fontWeight: '900', color: colors.ink },
   cardSub: { fontSize: 13, fontWeight: '600', color: colors.inkSoft, marginTop: 4, marginBottom: 14 },
   notice: { flexDirection: 'row', gap: 6, backgroundColor: colors.petal, padding: 10, borderRadius: radii.md, marginBottom: 12, alignItems: 'center' },

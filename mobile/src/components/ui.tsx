@@ -16,13 +16,15 @@ import { colors, radii, shadow, spacing } from '../theme';
 type ButtonProps = PressableProps & {
   title: string;
   variant?: 'primary' | 'soft' | 'ghost' | 'dark';
+  /** Gradient family for the primary variant — 'cool' swaps in the pink→violet holographic sweep. */
+  tone?: 'pink' | 'cool';
   icon?: keyof typeof Ionicons.glyphMap;
   loading?: boolean;
   size?: 'md' | 'lg';
   style?: ViewStyle;
 };
 
-export function Button({ title, variant = 'primary', icon, loading, size = 'md', style, ...rest }: ButtonProps) {
+export function Button({ title, variant = 'primary', tone = 'pink', icon, loading, size = 'md', style, ...rest }: ButtonProps) {
   const pad = size === 'lg' ? { paddingVertical: 16, paddingHorizontal: 24 } : { paddingVertical: 12, paddingHorizontal: 18 };
   const content = (
     <View style={styles.btnRow}>
@@ -52,13 +54,14 @@ export function Button({ title, variant = 'primary', icon, loading, size = 'md',
   );
 
   if (variant === 'primary') {
+    const gradientColors = tone === 'cool' ? colors.gradientCool : [colors.gradientA, colors.gradientB];
     return (
       <Pressable {...rest} style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }, style]}>
         <LinearGradient
-          colors={[colors.gradientA, colors.gradientB]}
+          colors={gradientColors as [string, string]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.btnBase, pad, shadow.soft]}
+          style={[styles.btnBase, pad, tone === 'cool' ? shadow.glow : shadow.soft]}
         >
           {content}
         </LinearGradient>
@@ -143,7 +146,7 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   sectionTitle: { fontSize: 20, fontWeight: '800', color: colors.ink },
   sectionAction: { fontSize: 14, fontWeight: '700', color: colors.primary },
-  card: { backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, ...shadow.card },
-  pill: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: radii.pill, alignSelf: 'flex-start' },
+  card: { backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.glassBorder, ...shadow.glow },
+  pill: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: radii.pill, alignSelf: 'flex-start', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' },
   pillText: { color: colors.white, fontWeight: '800', fontSize: 11, letterSpacing: 0.3 },
 });

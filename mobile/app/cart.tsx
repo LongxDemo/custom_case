@@ -23,7 +23,7 @@ export default function Cart() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
       <View style={[styles.topbar, { paddingTop: insets.top + 6 }]}>
-        <Pressable style={styles.iconBtn} onPress={() => router.back()}>
+        <Pressable style={styles.iconBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Ionicons name="chevron-back" size={22} color={colors.ink} />
         </Pressable>
         <Text style={styles.title}>Your bag 🛍️</Text>
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 20, fontWeight: '900', color: colors.ink, marginTop: 8 },
   emptySub: { color: colors.inkSoft, fontWeight: '600', marginTop: 4 },
 
-  card: { flexDirection: 'row', gap: 12, backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.md, ...shadow.soft },
+  card: { flexDirection: 'row', gap: 12, backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.glassBorder, ...shadow.glow },
   itemName: { fontSize: 15, fontWeight: '800', color: colors.ink },
   itemModel: { fontSize: 12, fontWeight: '600', color: colors.inkFaint, marginTop: 1 },
   fulfillRow: { flexDirection: 'row', gap: 8, marginTop: 8 },

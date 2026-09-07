@@ -28,6 +28,16 @@ export const colors = {
   // Gradient stops for the hero
   gradientA: '#FF4FA3',
   gradientB: '#FF8AC7',
+
+  // Cool counterpart — holographic pink↔violet accent for a little "cool" edge
+  iris: '#7B61FF',
+  irisDeep: '#5B3DE0',
+  irisSoft: '#C9BFFF',
+  gradientCool: ['#7B61FF', '#FF3E9A'],
+
+  // Glassmorphic surfaces
+  glass: 'rgba(255,255,255,0.55)',
+  glassBorder: 'rgba(255,255,255,0.7)',
 } as const;
 
 export const radii = {
@@ -68,6 +78,13 @@ export const shadow = {
     shadowOpacity: 0.22,
     shadowRadius: 24,
     elevation: 8,
+  },
+  glow: {
+    shadowColor: '#B23DFF',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.32,
+    shadowRadius: 28,
+    elevation: 10,
   },
 } as const;
 

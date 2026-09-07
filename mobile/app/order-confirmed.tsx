@@ -15,7 +15,7 @@ export default function OrderConfirmed() {
   const orderNo = React.useMemo(() => `CK-${Math.floor(100000 + Math.random() * 900000)}`, []);
 
   return (
-    <LinearGradient colors={[colors.gradientA, colors.gradientB]} style={{ flex: 1 }}>
+    <LinearGradient colors={colors.gradientCool as [string, string]} style={{ flex: 1 }}>
       <View style={[styles.container, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 24 }]}>
         <View style={styles.badge}>
           <Text style={{ fontSize: 70 }}>🐰</Text>

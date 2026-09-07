@@ -17,7 +17,12 @@
       "Bash(git config *)",
       "Bash(echo \"name: $\\(git config user.name\\)  email: $\\(git config user.email\\)\")",
       "Bash(gh --version)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(git ls-remote *)",
+      "WebSearch"
     ]
   }
 }

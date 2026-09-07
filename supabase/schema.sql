@@ -63,6 +63,7 @@ create table if not exists templates (
   active      boolean not null default true,
   featured    boolean not null default false,
   sort        int not null default 0,
+  uses_count  int not null default 0,      -- times a customer tapped this to start designing
   created_at  timestamptz not null default now()
 );
 
@@ -137,6 +138,25 @@ create table if not exists admins (
 create or replace function is_admin() returns boolean language sql stable as $$
   select exists (select 1 from admins where user_id = auth.uid());
 $$;
+
+-- Callable directly by clients (security definer, bypasses RLS on `admins`)
+-- so the app can ask "is the signed-in user an admin" without recursing
+-- through admins' own RLS policy, which itself depends on is_admin().
+create or replace function am_i_admin() returns boolean
+language sql security definer set search_path = public stable as $$
+  select exists (select 1 from admins where user_id = auth.uid());
+$$;
+grant execute on function am_i_admin() to anon, authenticated;
+
+-- Lets any client (including guests) bump a gallery template's popularity
+-- counter without granting UPDATE on templates itself — the table stays
+-- admin-write-only via the templates_admin_write policy below.
+create or replace function increment_template_uses(p_template_id text)
+returns void language sql security definer set search_path = public as $$
+  update templates set uses_count = uses_count + 1
+  where id = p_template_id and active = true;
+$$;
+grant execute on function increment_template_uses(text) to anon, authenticated;
 
 -- ─────────────────────────────────────────────────────────────
 -- Row Level Security
