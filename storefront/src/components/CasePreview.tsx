@@ -280,9 +280,11 @@ export function CameraModule({ style, width: W, height: H, tint }: { style: CamS
     );
   }
   if (style === 'ip17-air') {
-    // Real spec: ~60mm bar on a 74.7mm-wide body (~80% of width) — this was
-    // wrongly shrunk to 0.55 off a low-fidelity icon; restored to spec.
-    const pw = W * 0.76, ph = W * 0.17, px = W * 0.05, py = H * 0.045, ld = ph * 0.72;
+    // Measured directly off an official Apple product photo (apple.com/shop
+    // /buy-iphone/iphone-air, straight-on back view): the bar spans ~85% of
+    // the case width, edge to edge. Earlier 0.55 (icon guess) and 0.76
+    // (spec-table guess) were both short of the real photo.
+    const pw = W * 0.85, ph = W * 0.17, px = W * 0.05, py = H * 0.045, ld = ph * 0.72;
     return (
       <>
         <Plate l={px} t={py} w={pw} h={ph} r={ph * 0.5} tint={tint} />
