@@ -251,7 +251,10 @@ function Dot({ size, left, top }: { size: number; left: number; top: number }) {
 
 export function CameraModule({ style, width: W, height: H, tint }: { style: CamStyle; width: number; height: number; tint: string }) {
   if (style === 'ip17-plateau') {
-    const bx = W * 0.05, by = H * 0.035, bw = W * 0.9, bh = W * 0.22;
+    // Plateau height was way undersized (0.22 of width) — the spec table's
+    // own bump figure (~40mm on a 78mm-wide 17 Pro Max, ~51%) and the real
+    // Apple product photos both show a much chunkier plateau.
+    const bx = W * 0.05, by = H * 0.035, bw = W * 0.92, bh = W * 0.46;
     const s = bh * 0.9, sx = bx + bh * 0.14, sy = by + (bh - s) / 2, ld = s * 0.4;
     const rx = bx + bw * 0.7;
     return (
@@ -268,7 +271,9 @@ export function CameraModule({ style, width: W, height: H, tint }: { style: CamS
     );
   }
   if (style === 'ip17-bar') {
-    const bx = W * 0.05, by = H * 0.035, bw = W * 0.8, bh = W * 0.16, ld = bh * 0.68;
+    // Same undersizing issue as ip17-plateau — spec table's own bump figure
+    // (~26mm on a 71.5mm-wide 17, ~36%) is much taller than the old 0.16.
+    const bx = W * 0.05, by = H * 0.035, bw = W * 0.85, bh = W * 0.32, ld = bh * 0.68;
     return (
       <>
         <Plate l={bx} t={by} w={bw} h={bh} r={bh * 0.46} tint={tint} />
