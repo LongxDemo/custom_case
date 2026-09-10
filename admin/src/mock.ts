@@ -71,7 +71,7 @@ export const mockTemplates: TemplateRow[] = [
     background: { id: 'sunset', name: 'K-Sunset', colors: ['#FFC3A0', '#FF5470'] },
     layers: [
       { id: 'a', kind: 'text', text: '♡ my bias ♡', color: '#FFFFFF', fontSize: 26, fontWeight: '800', align: 'center', tx: 0, ty: 150, scale: 1, rotation: 0, z: 3 },
-      { id: 'b', kind: 'sticker', emoji: '📸', size: 50, tx: 0, ty: -160, scale: 1, rotation: 0, z: 2 },
+      { id: 'b', kind: 'sticker', emoji: '📸', size: 50, tx: 80, ty: -150, scale: 1, rotation: 0, z: 2 },
     ],
   },
 ];

@@ -68,7 +68,8 @@ function Login() {
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const submit = async () => {
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!supabase) return;
     setLoading(true); setErr('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -78,16 +79,16 @@ function Login() {
 
   return (
     <div className="login-wrap">
-      <div className="login-card">
+      <form className="login-card" onSubmit={submit}>
         <h1>casey</h1>
         <p>Admin dashboard — sign in to continue 💗</p>
-        <input className="f" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input className="f" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <input className="f" type="email" autoComplete="username" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className="f" type="password" autoComplete="current-password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
         {err && <p style={{ color: '#ff5470' }}>{err}</p>}
-        <button className="btn" style={{ width: '100%', justifyContent: 'center' }} disabled={loading} onClick={submit}>
+        <button className="btn" type="submit" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
           {loading ? 'Signing in…' : 'Sign in'}
         </button>
-      </div>
+      </form>
     </div>
   );
 }
@@ -290,20 +291,24 @@ function Gallery() {
                 </div>
               </div>
               <div className="tpl-controls">
-                <button className={`chip-pick ${t.active ? 'on' : ''}`} onClick={() => patch(t.id, { active: !t.active })}>
-                  {t.active ? '✓ Active' : 'Hidden'}
-                </button>
-                <button className={`chip-pick ${t.featured ? 'on' : ''}`} onClick={() => patch(t.id, { featured: !t.featured })}>
-                  {t.featured ? '★ Featured' : 'Feature'}
-                </button>
-                <input
-                  className="tpl-sort-input"
-                  type="number"
-                  value={t.sort}
-                  onChange={(e) => patch(t.id, { sort: Number(e.target.value) || 0 })}
-                  title="Sort order"
-                />
-                <button className="tpl-delete" onClick={() => remove(t.id)} title="Remove from gallery">🗑️</button>
+                <div className="tpl-controls-row">
+                  <button className={`chip-pick ${t.active ? 'on' : ''}`} onClick={() => patch(t.id, { active: !t.active })}>
+                    {t.active ? '✓ Active' : 'Hidden'}
+                  </button>
+                  <button className={`chip-pick ${t.featured ? 'on' : ''}`} onClick={() => patch(t.id, { featured: !t.featured })}>
+                    {t.featured ? '★ Featured' : 'Feature'}
+                  </button>
+                </div>
+                <div className="tpl-controls-row">
+                  <input
+                    className="tpl-sort-input"
+                    type="number"
+                    value={t.sort}
+                    onChange={(e) => patch(t.id, { sort: Number(e.target.value) || 0 })}
+                    title="Sort order"
+                  />
+                  <button className="tpl-delete" onClick={() => remove(t.id)} title="Remove from gallery">🗑️</button>
+                </div>
               </div>
             </div>
           ))}

@@ -62,7 +62,7 @@ function LayerView({ layer, scale }: { layer: Layer; scale: number }) {
   if (layer.kind === 'sticker') {
     const s = layer.size * scale;
     return layer.uri ? (
-      <img src={layer.uri} style={{ ...base, width: s, height: s, objectFit: 'contain' }} />
+      <img src={layer.uri} alt="" style={{ ...base, width: s, height: s, objectFit: 'contain' }} />
     ) : (
       <div style={{ ...base, fontSize: s * 0.9, lineHeight: 1 }}>{layer.emoji}</div>
     );
@@ -71,6 +71,7 @@ function LayerView({ layer, scale }: { layer: Layer; scale: number }) {
     return (
       <img
         src={layer.uri}
+        alt=""
         style={{ ...base, width: layer.width * scale, height: layer.height * scale, borderRadius: (layer.radius ?? 0) * scale, objectFit: 'cover' }}
       />
     );
