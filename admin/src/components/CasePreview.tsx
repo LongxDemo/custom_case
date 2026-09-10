@@ -312,8 +312,8 @@ export function CameraModule({ style, width: W, height: H, tint }: { style: CamS
         <Lens size={ld} left={px + s * 0.08} top={py + s * 0.08} tint={tint} />
         <Lens size={ld} left={px + s * 0.08} top={py + s * 0.5} tint={tint} />
         <Lens size={ld} left={px + s * 0.5} top={py + s * 0.29} tint={tint} />
-        <Dot size={ld * 0.3} left={px + s * 0.76} top={py + s * 0.15} />
-        <Flash size={ld * 0.4} left={px + s * 0.74} top={py + s * 0.56} />
+        <Dot size={ld * 0.3} left={px + s * 0.74} top={py + s * 0.16} />
+        <Flash size={ld * 0.4} left={px + s * 0.64} top={py + s * 0.48} />
       </>
     );
   }
