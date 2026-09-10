@@ -298,7 +298,8 @@ function CameraModule({ style, width: W, height: H }: { style: CamStyle; width: 
         <Lens size={ld} left={px + s * 0.08} top={py + s * 0.08} />
         <Lens size={ld} left={px + s * 0.08} top={py + s * 0.5} />
         <Lens size={ld} left={px + s * 0.5} top={py + s * 0.29} />
-        <Lens size={ld * 0.34} left={px + s * 0.74} top={py + s * 0.14} />
+        <Dot size={ld * 0.3} left={px + s * 0.76} top={py + s * 0.15} />
+        <Flash size={ld * 0.4} left={px + s * 0.74} top={py + s * 0.56} />
       </>
     );
   }

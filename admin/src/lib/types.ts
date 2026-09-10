@@ -55,15 +55,15 @@ export type FrontPage = {
 export type PhoneModel = { id: string; brand: string; name: string; aspect: number; camera?: { x: number; y: number; w: number; h: number } };
 
 export const MODELS: Record<string, PhoneModel> = {
-  ip17pm: { id: 'ip17pm', brand: 'iPhone', name: '17 Pro Max', aspect: 0.46 },
-  ip17p: { id: 'ip17p', brand: 'iPhone', name: '17 Pro', aspect: 0.46 },
+  ip17pm: { id: 'ip17pm', brand: 'iPhone', name: '17 Pro Max', aspect: 0.476 },
+  ip17p: { id: 'ip17p', brand: 'iPhone', name: '17 Pro', aspect: 0.478 },
   ip17air: { id: 'ip17air', brand: 'iPhone', name: 'Air', aspect: 0.48 },
   ip17: { id: 'ip17', brand: 'iPhone', name: '17', aspect: 0.47 },
-  ip16pm: { id: 'ip16pm', brand: 'iPhone', name: '16 Pro Max', aspect: 0.46 },
-  ip16p: { id: 'ip16p', brand: 'iPhone', name: '16 Pro', aspect: 0.46 },
+  ip16pm: { id: 'ip16pm', brand: 'iPhone', name: '16 Pro Max', aspect: 0.476 },
+  ip16p: { id: 'ip16p', brand: 'iPhone', name: '16 Pro', aspect: 0.478 },
   ip16: { id: 'ip16', brand: 'iPhone', name: '16 / 16 Plus', aspect: 0.48 },
-  ip15pm: { id: 'ip15pm', brand: 'iPhone', name: '15 Pro Max', aspect: 0.49 },
-  ip15: { id: 'ip15', brand: 'iPhone', name: '15 / 15 Pro', aspect: 0.49 },
+  ip15pm: { id: 'ip15pm', brand: 'iPhone', name: '15 Pro Max', aspect: 0.48 },
+  ip15: { id: 'ip15', brand: 'iPhone', name: '15 / 15 Pro', aspect: 0.483 },
   ip14: { id: 'ip14', brand: 'iPhone', name: '14 / 13', aspect: 0.49 },
   ip12: { id: 'ip12', brand: 'iPhone', name: '12 / 11', aspect: 0.49 },
   ipse: { id: 'ipse', brand: 'iPhone', name: 'SE (2022)', aspect: 0.49 },
