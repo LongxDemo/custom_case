@@ -99,7 +99,11 @@ function LayerView({ layer, scale }: { layer: Layer; scale: number }) {
    same "metallic ring + glass + specular highlight" look, rebuilt with CSS gradients
    since the admin dashboard renders previews as plain <div> trees. */
 
-type CamStyle = 'ip17-pro' | 'ip17-air' | 'ip-square' | 'ip-vert' | 'ip-dual' | 'ip-single' | 'samsung' | 'pixel' | 'generic';
+// From the iPhone 17 generation, Apple moved to a full-width horizontal camera
+// plateau (spanning nearly the whole back) instead of the square/pill module
+// used on 11-16 — 'ip17-plateau' (triple lens, Pro/Pro Max) and 'ip17-bar'
+// (dual lens, base 17) model that; pre-17 iPhones keep the old cluster styles.
+type CamStyle = 'ip17-plateau' | 'ip17-bar' | 'ip17-air' | 'ip-square' | 'ip-vert' | 'ip-dual' | 'ip-single' | 'samsung' | 'pixel' | 'generic';
 type Tone = 'cool' | 'glossy' | 'matte';
 
 function camStyleFor(model: PhoneModel): CamStyle {
@@ -107,9 +111,9 @@ function camStyleFor(model: PhoneModel): CamStyle {
   if (model.brand === 'Samsung') return 'samsung';
   if (model.brand === 'iPhone') {
     const n = model.name;
-    if (n.startsWith('17 Pro')) return 'ip17-pro';
+    if (n.startsWith('17 Pro')) return 'ip17-plateau';
     if (n === 'Air') return 'ip17-air';
-    if (n === '17') return 'ip-vert';
+    if (n === '17') return 'ip17-bar';
     if (n.includes('Pro')) return 'ip-square';
     if (n.startsWith('16')) return 'ip-vert';
     if (n.startsWith('SE')) return 'ip-single';
@@ -250,7 +254,9 @@ function Dot({ size, left, top }: { size: number; left: number; top: number }) {
 }
 
 function CameraModule({ style, width: W, height: H }: { style: CamStyle; width: number; height: number }) {
-  if (style === 'ip17-pro') {
+  if (style === 'ip17-plateau') {
+    // Triple lens, full-width plateau (17 Pro / Pro Max) — lens cluster on the
+    // left, flash/mic/LiDAR on the right, spanning nearly the whole case width.
     const bx = W * 0.05, by = H * 0.035, bw = W * 0.9, bh = W * 0.22;
     const s = bh * 0.9, sx = bx + bh * 0.14, sy = by + (bh - s) / 2, ld = s * 0.4;
     const rx = bx + bw * 0.7;
@@ -267,14 +273,29 @@ function CameraModule({ style, width: W, height: H }: { style: CamStyle; width: 
       </>
     );
   }
+  if (style === 'ip17-bar') {
+    // Dual lens, wide horizontal bar (base 17) — same plateau language as Pro
+    // but shorter and with only 2 lenses side by side, no LiDAR.
+    const bx = W * 0.05, by = H * 0.035, bw = W * 0.8, bh = W * 0.16, ld = bh * 0.68;
+    return (
+      <>
+        <Plate l={bx} t={by} w={bw} h={bh} r={bh * 0.46} />
+        <Lens size={ld} left={bx + bh * 0.16} top={by + (bh - ld) / 2} />
+        <Lens size={ld} left={bx + bh * 0.16 + ld * 1.15} top={by + (bh - ld) / 2} />
+        <Flash size={bh * 0.32} left={bx + bw * 0.72} top={by + bh * 0.34} />
+        <Dot size={bh * 0.14} left={bx + bw * 0.85} top={by + bh * 0.43} />
+      </>
+    );
+  }
   if (style === 'ip17-air') {
-    const pw = W * 0.44, ph = W * 0.19, px = W * 0.05, py = H * 0.04, ld = ph * 0.72;
+    // Single lens, shorter bar (thin body, still bar-shaped but not full-width).
+    const pw = W * 0.62, ph = W * 0.17, px = W * 0.05, py = H * 0.04, ld = ph * 0.72;
     return (
       <>
         <Plate l={px} t={py} w={pw} h={ph} r={ph * 0.5} />
         <Lens size={ld} left={px + ph * 0.16} top={py + ph * 0.14} />
-        <Flash size={ph * 0.34} left={px + pw * 0.6} top={py + ph * 0.32} />
-        <Dot size={ph * 0.16} left={px + pw * 0.82} top={py + ph * 0.42} />
+        <Flash size={ph * 0.34} left={px + pw * 0.68} top={py + ph * 0.32} />
+        <Dot size={ph * 0.16} left={px + pw * 0.86} top={py + ph * 0.42} />
       </>
     );
   }

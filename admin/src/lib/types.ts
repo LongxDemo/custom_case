@@ -55,18 +55,19 @@ export type FrontPage = {
 export type PhoneModel = { id: string; brand: string; name: string; aspect: number; camera?: { x: number; y: number; w: number; h: number } };
 
 export const MODELS: Record<string, PhoneModel> = {
-  ip17pm: { id: 'ip17pm', brand: 'iPhone', name: '17 Pro Max', aspect: 0.476 },
-  ip17p: { id: 'ip17p', brand: 'iPhone', name: '17 Pro', aspect: 0.478 },
-  ip17air: { id: 'ip17air', brand: 'iPhone', name: 'Air', aspect: 0.48 },
-  ip17: { id: 'ip17', brand: 'iPhone', name: '17', aspect: 0.47 },
-  ip16pm: { id: 'ip16pm', brand: 'iPhone', name: '16 Pro Max', aspect: 0.476 },
-  ip16p: { id: 'ip16p', brand: 'iPhone', name: '16 Pro', aspect: 0.478 },
-  ip16: { id: 'ip16', brand: 'iPhone', name: '16 / 16 Plus', aspect: 0.48 },
-  ip15pm: { id: 'ip15pm', brand: 'iPhone', name: '15 Pro Max', aspect: 0.48 },
-  ip15: { id: 'ip15', brand: 'iPhone', name: '15 / 15 Pro', aspect: 0.483 },
-  ip14: { id: 'ip14', brand: 'iPhone', name: '14 / 13', aspect: 0.49 },
-  ip12: { id: 'ip12', brand: 'iPhone', name: '12 / 11', aspect: 0.49 },
-  ipse: { id: 'ipse', brand: 'iPhone', name: 'SE (2022)', aspect: 0.49 },
+  // Aspect = body width / height from Apple's published specs.
+  ip17pm: { id: 'ip17pm', brand: 'iPhone', name: '17 Pro Max', aspect: 0.477 }, // 78.0 / 163.4
+  ip17p: { id: 'ip17p', brand: 'iPhone', name: '17 Pro', aspect: 0.479 }, // 71.9 / 150.0
+  ip17air: { id: 'ip17air', brand: 'iPhone', name: 'Air', aspect: 0.478 }, // 74.7 / 156.2
+  ip17: { id: 'ip17', brand: 'iPhone', name: '17', aspect: 0.478 }, // 71.5 / 149.6
+  ip16pm: { id: 'ip16pm', brand: 'iPhone', name: '16 Pro Max', aspect: 0.476 }, // 77.6 / 163.0
+  ip16p: { id: 'ip16p', brand: 'iPhone', name: '16 Pro', aspect: 0.478 }, // 71.5 / 149.6
+  ip16: { id: 'ip16', brand: 'iPhone', name: '16 / 16 Plus', aspect: 0.484 }, // avg 71.6/147.6, 77.8/160.9
+  ip15pm: { id: 'ip15pm', brand: 'iPhone', name: '15 Pro Max', aspect: 0.48 }, // 76.7 / 159.9
+  ip15: { id: 'ip15', brand: 'iPhone', name: '15 / 15 Pro', aspect: 0.483 }, // avg 71.6/147.6, 70.6/146.6
+  ip14: { id: 'ip14', brand: 'iPhone', name: '14 / 13', aspect: 0.487 }, // 71.5 / 146.7
+  ip12: { id: 'ip12', brand: 'iPhone', name: '12 / 11', aspect: 0.495 }, // avg 71.5/146.7, 75.7/150.9
+  ipse: { id: 'ipse', brand: 'iPhone', name: 'SE (2022)', aspect: 0.486 }, // 67.3 / 138.4 (iPhone 8 body)
   s24u: { id: 's24u', brand: 'Samsung', name: 'S24 Ultra', aspect: 0.46 },
   s24p: { id: 's24p', brand: 'Samsung', name: 'S24+', aspect: 0.46 },
   s24: { id: 's24', brand: 'Samsung', name: 'Galaxy S24', aspect: 0.47 },
