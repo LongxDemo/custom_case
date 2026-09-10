@@ -28,22 +28,29 @@ export function CasePreview({
         borderRadius: radius,
         position: 'relative',
         overflow: 'hidden',
-        border: '3px solid rgba(255,255,255,0.6)',
-        background: `linear-gradient(135deg, ${colors[0]}, ${colors[colors.length - 1]})`,
-        boxShadow: '0 12px 24px rgba(214,0,110,0.18)',
+        background: `linear-gradient(155deg, ${colors[0]}, ${colors[colors.length - 1]})`,
+        // Grounded product-photo shadow + a crisp 1px seam and thin edge
+        // catch-light instead of a thick colored outline (reads as a sticker).
+        boxShadow: [
+          '0 24px 48px -18px rgba(20,10,20,0.45)',
+          '0 8px 18px -10px rgba(20,10,20,0.3)',
+          'inset 0 0 0 1px rgba(0,0,0,0.1)',
+          'inset 0 1px 1px rgba(255,255,255,0.35)',
+          'inset 0 -1px 2px rgba(0,0,0,0.18)',
+        ].join(', '),
       }}
     >
       {ordered.map((l) => (
         <LayerView key={l.id} layer={l} scale={scale} />
       ))}
       <CameraModule style={camStyleFor(model)} width={renderWidth} height={height} tint={colors[0]} />
-      {/* glossy printed-case sheen — matches the storefront's case preview */}
+      {/* subtle printed-case sheen */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           pointerEvents: 'none',
-          background: 'linear-gradient(135deg, rgba(255,255,255,0) 32%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0) 68%)',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0) 38%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 62%)',
         }}
       />
     </div>
@@ -134,10 +141,12 @@ function plateGradient(tint: string) {
 }
 
 function Lens({ size, left, top, tint }: { size: number; left: number; top: number; tint: string }) {
-  const ringW = Math.max(1.2, size * 0.15);
+  // Thin precise ring (not a thick "googly eye" outline) around a near-black
+  // glass disc, with a single small, tight specular catch-light.
+  const ringW = Math.max(1, size * 0.1);
   const glassSize = size - ringW * 2;
   return (
-    <div style={{ position: 'absolute', left, top, width: size, height: size, borderRadius: '50%', overflow: 'hidden', background: ringGradient(tint) }}>
+    <div style={{ position: 'absolute', left, top, width: size, height: size, borderRadius: '50%', overflow: 'hidden', background: ringGradient(tint), boxShadow: '0 0.5px 1px rgba(0,0,0,0.4)' }}>
       <div
         style={{
           position: 'absolute',
@@ -146,35 +155,22 @@ function Lens({ size, left, top, tint }: { size: number; left: number; top: numb
           width: glassSize,
           height: glassSize,
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #02030a, #1a2036 45%, #04050c)',
+          background: 'radial-gradient(circle at 32% 28%, #1c2333 0%, #05060c 55%, #010102 100%)',
         }}
       />
-      {size >= 14 && (
-        <>
-          <div
-            style={{
-              position: 'absolute',
-              left: size * 0.2,
-              top: size * 0.16,
-              width: size * 0.36,
-              height: size * 0.2,
-              borderRadius: size * 0.18,
-              background: 'rgba(255,255,255,0.5)',
-              transform: 'rotate(-24deg)',
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              left: size * 0.58,
-              top: size * 0.56,
-              width: size * 0.16,
-              height: size * 0.16,
-              borderRadius: '50%',
-              background: 'rgba(130,160,255,0.45)',
-            }}
-          />
-        </>
+      {size >= 12 && (
+        <div
+          style={{
+            position: 'absolute',
+            left: size * 0.28,
+            top: size * 0.24,
+            width: size * 0.2,
+            height: size * 0.12,
+            borderRadius: size * 0.1,
+            background: 'rgba(255,255,255,0.4)',
+            transform: 'rotate(-30deg)',
+          }}
+        />
       )}
     </div>
   );
@@ -190,15 +186,16 @@ function Plate({ l, t, w, h, r, tint }: { l: number; t: number; w: number; h: nu
         width: w,
         height: h,
         borderRadius: r,
-        overflow: 'hidden',
-        boxShadow: `0 ${Math.max(2, h * 0.09)}px ${Math.max(4, h * 0.2)}px rgba(10,8,18,0.3)`,
         background: plateGradient(tint),
+        // Crisp thin seam + soft contact shadow reads as a precise molded
+        // edge instead of a raised sticker with fat highlight strokes.
+        boxShadow: [
+          `0 ${Math.max(1.5, h * 0.05)}px ${Math.max(3, h * 0.12)}px rgba(10,8,18,0.28)`,
+          'inset 0 0 0 1px rgba(0,0,0,0.12)',
+          'inset 0 1px 0.5px rgba(255,255,255,0.3)',
+        ].join(', '),
       }}
-    >
-      <div style={{ position: 'absolute', left: 0, top: 0, right: 0, height: 1.5, background: 'rgba(255,255,255,0.45)' }} />
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 1.5, background: 'rgba(255,255,255,0.3)' }} />
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 1.5, background: 'rgba(0,0,0,0.2)' }} />
-    </div>
+    />
   );
 }
 
@@ -213,8 +210,8 @@ function Flash({ size, left, top }: { size: number; left: number; top: number })
         height: size,
         borderRadius: '50%',
         overflow: 'hidden',
-        border: `${Math.max(1, size * 0.1)}px solid rgba(190,190,212,0.7)`,
-        background: 'linear-gradient(135deg, #fffaf2, #e7e2df)',
+        border: `${Math.max(0.6, size * 0.06)}px solid rgba(180,180,200,0.5)`,
+        background: 'radial-gradient(circle at 35% 30%, #fffdf9, #e7e2df)',
       }}
     >
       {size >= 12 && (
@@ -223,10 +220,10 @@ function Flash({ size, left, top }: { size: number; left: number; top: number })
             position: 'absolute',
             left: size * 0.16,
             top: size * 0.12,
-            width: size * 0.4,
-            height: size * 0.22,
-            borderRadius: size * 0.2,
-            background: 'rgba(255,255,255,0.75)',
+            width: size * 0.36,
+            height: size * 0.18,
+            borderRadius: size * 0.18,
+            background: 'rgba(255,255,255,0.7)',
             transform: 'rotate(-18deg)',
           }}
         />
@@ -245,14 +242,14 @@ function Dot({ size, left, top }: { size: number; left: number; top: number }) {
         width: size,
         height: size,
         borderRadius: '50%',
-        background: '#0e0c14',
-        border: `${Math.max(0.8, size * 0.14)}px solid rgba(255,255,255,0.2)`,
+        background: '#0b0a10',
+        border: `${Math.max(0.6, size * 0.08)}px solid rgba(255,255,255,0.14)`,
       }}
     />
   );
 }
 
-function CameraModule({ style, width: W, height: H, tint }: { style: CamStyle; width: number; height: number; tint: string }) {
+export function CameraModule({ style, width: W, height: H, tint }: { style: CamStyle; width: number; height: number; tint: string }) {
   if (style === 'ip17-plateau') {
     const bx = W * 0.05, by = H * 0.035, bw = W * 0.9, bh = W * 0.22;
     const s = bh * 0.9, sx = bx + bh * 0.14, sy = by + (bh - s) / 2, ld = s * 0.4;
@@ -260,7 +257,7 @@ function CameraModule({ style, width: W, height: H, tint }: { style: CamStyle; w
     return (
       <>
         <Plate l={bx} t={by} w={bw} h={bh} r={bh * 0.4} tint={tint} />
-        <div style={{ position: 'absolute', left: sx, top: sy, width: s, height: s, borderRadius: s * 0.28, background: 'rgba(10,8,14,0.26)', border: '1.5px solid rgba(255,255,255,0.22)' }} />
+        <div style={{ position: 'absolute', left: sx, top: sy, width: s, height: s, borderRadius: s * 0.28, background: 'rgba(10,8,14,0.16)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.14)' }} />
         <Lens size={ld} left={sx + s * 0.08} top={sy + s * 0.08} tint={tint} />
         <Lens size={ld} left={sx + s * 0.08} top={sy + s * 0.5} tint={tint} />
         <Lens size={ld} left={sx + s * 0.5} top={sy + s * 0.29} tint={tint} />
@@ -283,7 +280,7 @@ function CameraModule({ style, width: W, height: H, tint }: { style: CamStyle; w
     );
   }
   if (style === 'ip17-air') {
-    const pw = W * 0.62, ph = W * 0.17, px = W * 0.05, py = H * 0.04, ld = ph * 0.72;
+    const pw = W * 0.55, ph = W * 0.17, px = W * 0.05, py = H * 0.045, ld = ph * 0.72;
     return (
       <>
         <Plate l={px} t={py} w={pw} h={ph} r={ph * 0.5} tint={tint} />
@@ -294,7 +291,7 @@ function CameraModule({ style, width: W, height: H, tint }: { style: CamStyle; w
     );
   }
   if (style === 'ip-vert') {
-    const s = W * 0.27, px = W * 0.05, py = H * 0.04, sh = s * 1.12, ld = s * 0.46;
+    const s = W * 0.27, px = W * 0.05, py = H * 0.045, sh = s * 1.12, ld = s * 0.46;
     const lx = px + s * 0.13;
     return (
       <>
@@ -306,7 +303,9 @@ function CameraModule({ style, width: W, height: H, tint }: { style: CamStyle; w
     );
   }
   if (style === 'ip-square') {
-    const s = W * 0.42, px = W * 0.05, py = H * 0.035, ld = s * 0.4;
+    // Reference case silhouettes show the Pro cutout only modestly bigger
+    // than the base-model square, not dramatically larger.
+    const s = W * 0.32, px = W * 0.06, py = H * 0.045, ld = s * 0.4;
     return (
       <>
         <Plate l={px} t={py} w={s} h={s} r={s * 0.28} tint={tint} />
