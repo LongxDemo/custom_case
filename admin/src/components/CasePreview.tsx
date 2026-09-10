@@ -254,7 +254,7 @@ export function CameraModule({ style, width: W, height: H, tint }: { style: CamS
     // Plateau height was way undersized (0.22 of width) — the spec table's
     // own bump figure (~40mm on a 78mm-wide 17 Pro Max, ~51%) and the real
     // Apple product photos both show a much chunkier plateau.
-    const bx = W * 0.05, by = H * 0.035, bw = W * 0.92, bh = W * 0.46;
+    const bx = W * 0.05, by = H * 0.035, bw = W * 0.92, bh = W * 0.51;
     const s = bh * 0.9, sx = bx + bh * 0.14, sy = by + (bh - s) / 2, ld = s * 0.4;
     const rx = bx + bw * 0.7;
     return (
@@ -273,14 +273,14 @@ export function CameraModule({ style, width: W, height: H, tint }: { style: CamS
   if (style === 'ip17-bar') {
     // Same undersizing issue as ip17-plateau — spec table's own bump figure
     // (~26mm on a 71.5mm-wide 17, ~36%) is much taller than the old 0.16.
-    const bx = W * 0.05, by = H * 0.035, bw = W * 0.85, bh = W * 0.32, ld = bh * 0.68;
+    const bx = W * 0.05, by = H * 0.035, bw = W * 0.85, bh = W * 0.36, ld = bh * 0.68;
     return (
       <>
         <Plate l={bx} t={by} w={bw} h={bh} r={bh * 0.46} tint={tint} />
         <Lens size={ld} left={bx + bh * 0.16} top={by + (bh - ld) / 2} tint={tint} />
         <Lens size={ld} left={bx + bh * 0.16 + ld * 1.15} top={by + (bh - ld) / 2} tint={tint} />
         <Flash size={bh * 0.32} left={bx + bw * 0.72} top={by + bh * 0.34} />
-        <Dot size={bh * 0.14} left={bx + bw * 0.85} top={by + bh * 0.43} />
+        <Dot size={bh * 0.14} left={bx + bw * 0.9} top={by + bh * 0.43} />
       </>
     );
   }
@@ -289,7 +289,7 @@ export function CameraModule({ style, width: W, height: H, tint }: { style: CamS
     // /buy-iphone/iphone-air, straight-on back view): the bar spans ~85% of
     // the case width, edge to edge. Earlier 0.55 (icon guess) and 0.76
     // (spec-table guess) were both short of the real photo.
-    const pw = W * 0.85, ph = W * 0.17, px = W * 0.05, py = H * 0.045, ld = ph * 0.72;
+    const pw = W * 0.85, ph = W * 0.27, px = W * 0.05, py = H * 0.045, ld = ph * 0.72;
     return (
       <>
         <Plate l={px} t={py} w={pw} h={ph} r={ph * 0.5} tint={tint} />
@@ -300,7 +300,7 @@ export function CameraModule({ style, width: W, height: H, tint }: { style: CamS
     );
   }
   if (style === 'ip-vert') {
-    const s = W * 0.27, px = W * 0.05, py = H * 0.045, sh = s * 1.12, ld = s * 0.46;
+    const s = W * 0.42, px = W * 0.05, py = H * 0.045, sh = s * 1.83, ld = s * 0.46;
     const lx = px + s * 0.13;
     return (
       <>
@@ -312,9 +312,9 @@ export function CameraModule({ style, width: W, height: H, tint }: { style: CamS
     );
   }
   if (style === 'ip-square') {
-    // Reference case silhouettes show the Pro cutout only modestly bigger
-    // than the base-model square, not dramatically larger.
-    const s = W * 0.32, px = W * 0.06, py = H * 0.045, ld = s * 0.4;
+    // Spec table bump figures for 15 Pro/16 Pro/16 Pro Max average ~0.50 of
+    // body width (38-40mm on 70.6-77.6mm bodies) — 0.32 was undersized.
+    const s = W * 0.5, px = W * 0.06, py = H * 0.045, ld = s * 0.4;
     return (
       <>
         <Plate l={px} t={py} w={s} h={s} r={s * 0.28} tint={tint} />
@@ -327,17 +327,20 @@ export function CameraModule({ style, width: W, height: H, tint }: { style: CamS
     );
   }
   if (style === 'ip-dual') {
-    const s = W * 0.27, px = W * 0.05, py = H * 0.04, sh = s * 1.12, ld = s * 0.48;
+    // Spec table bump figures for 11/12/13/14 average ~0.45 of body width
+    // (30-35mm on 71.5-75.7mm bodies) — 0.27 was undersized. Lens size/inset
+    // tightened so the two diagonal lenses don't overlap at the bigger size.
+    const s = W * 0.45, px = W * 0.05, py = H * 0.04, sh = s * 1.2, ld = s * 0.42;
     return (
       <>
         <Plate l={px} t={py} w={s} h={sh} r={s * 0.32} tint={tint} />
-        <Lens size={ld} left={px + s * 0.1} top={py + s * 0.1} tint={tint} />
-        <Lens size={ld} left={px + s - ld - s * 0.1} top={py + sh - ld - s * 0.1} tint={tint} />
+        <Lens size={ld} left={px + s * 0.06} top={py + s * 0.06} tint={tint} />
+        <Lens size={ld} left={px + s - ld - s * 0.06} top={py + sh - ld - s * 0.06} tint={tint} />
       </>
     );
   }
   if (style === 'ip-single') {
-    const ld = W * 0.13;
+    const ld = W * 0.32;
     return <Lens size={ld} left={W * 0.06} top={H * 0.045} tint={tint} />;
   }
   if (style === 'samsung') {
