@@ -241,7 +241,7 @@ function Editor({ design, onBack }: { design: ReturnType<typeof useDesign>; onBa
             <EditableLayer key={l.id} layer={l} selected={l.id === selectedId} scale={scale} canvasRef={canvasRef} onSelect={select} onChange={updateLayer} />
           ))}
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-            <CameraModule style={camStyleFor(model)} width={canvasW} height={canvasH} />
+            <CameraModule style={camStyleFor(model)} width={canvasW} height={canvasH} tint={d.background.colors[0]} />
           </div>
         </div>
         {d.layers.length === 0 && <p className="panel-hint" style={{ position: 'absolute', bottom: 8 }}>Add stickers, text or a photo 👇</p>}

@@ -36,8 +36,8 @@ export function CasePreview({
       {ordered.map((l) => (
         <LayerView key={l.id} layer={l} scale={scale} />
       ))}
-      <CameraModule style={camStyleFor(model)} width={renderWidth} height={height} />
-      {/* glossy printed-case sheen — matches the mobile app's case preview */}
+      <CameraModule style={camStyleFor(model)} width={renderWidth} height={height} tint={colors[0]} />
+      {/* glossy printed-case sheen — matches the storefront's case preview */}
       <div
         style={{
           position: 'absolute',
@@ -96,16 +96,13 @@ function LayerView({ layer, scale }: { layer: Layer; scale: number }) {
 }
 
 /* ───────────────────────── Realistic camera module (CSS) ─────────────────────────
-   Mirrors mobile/src/components/CasePreview.tsx — same brand→layout mapping and the
-   same "metallic ring + glass + specular highlight" look, rebuilt with CSS gradients
-   since the admin dashboard renders previews as plain <div> trees. */
+   Mirrors storefront/src/components/CasePreview.tsx — same brand→layout mapping. */
 
 // From the iPhone 17 generation, Apple moved to a full-width horizontal camera
 // plateau (spanning nearly the whole back) instead of the square/pill module
 // used on 11-16 — 'ip17-plateau' (triple lens, Pro/Pro Max) and 'ip17-bar'
-// (dual lens, base 17) model that; pre-17 iPhones keep the old cluster styles.
+// (dual lens, base 17); pre-17 iPhones keep the old cluster styles.
 type CamStyle = 'ip17-plateau' | 'ip17-bar' | 'ip17-air' | 'ip-square' | 'ip-vert' | 'ip-dual' | 'ip-single' | 'samsung' | 'pixel' | 'generic';
-type Tone = 'cool' | 'glossy' | 'matte';
 
 function camStyleFor(model: PhoneModel): CamStyle {
   if (model.brand === 'Google') return 'pixel';
@@ -123,23 +120,24 @@ function camStyleFor(model: PhoneModel): CamStyle {
   return 'generic';
 }
 
-const RING_TINT: Record<Tone, string> = {
-  cool: 'linear-gradient(135deg, #d8dbe6, #565a68 55%, #aeb2c2)',
-  glossy: 'linear-gradient(135deg, #5a5a64, #08080c 55%, #46464e)',
-  matte: 'linear-gradient(135deg, #9aa0ac, #42454e 55%, #868c98)',
-};
+// On a real printed/molded case, the camera cutout's rim and raised plateau
+// are the SAME material as the rest of the case (see reference product
+// photos: an orange case has an orange-tinted camera surround, not a
+// separate silver/metal module) — only the lens glass itself, flash, and
+// sensor dot stay their real (dark/white/dark) colors. `tint` is the case's
+// own background color, mixed lighter/darker for the raised-edge shading.
+function ringGradient(tint: string) {
+  return `linear-gradient(135deg, color-mix(in srgb, ${tint} 70%, white), color-mix(in srgb, ${tint} 55%, black) 55%, color-mix(in srgb, ${tint} 75%, white))`;
+}
+function plateGradient(tint: string) {
+  return `linear-gradient(160deg, color-mix(in srgb, ${tint} 88%, white), color-mix(in srgb, ${tint} 78%, black))`;
+}
 
-const PLATE_TINT: Record<Tone, string> = {
-  cool: 'linear-gradient(160deg, rgba(255,255,255,0.30), rgba(18,16,26,0.24))',
-  glossy: 'linear-gradient(160deg, rgba(70,70,80,0.28), rgba(6,6,10,0.34))',
-  matte: 'linear-gradient(160deg, rgba(120,124,136,0.26), rgba(28,30,38,0.26))',
-};
-
-function Lens({ size, left, top, tone = 'cool' }: { size: number; left: number; top: number; tone?: Tone }) {
+function Lens({ size, left, top, tint }: { size: number; left: number; top: number; tint: string }) {
   const ringW = Math.max(1.2, size * 0.15);
   const glassSize = size - ringW * 2;
   return (
-    <div style={{ position: 'absolute', left, top, width: size, height: size, borderRadius: '50%', overflow: 'hidden', background: RING_TINT[tone] }}>
+    <div style={{ position: 'absolute', left, top, width: size, height: size, borderRadius: '50%', overflow: 'hidden', background: ringGradient(tint) }}>
       <div
         style={{
           position: 'absolute',
@@ -182,7 +180,7 @@ function Lens({ size, left, top, tone = 'cool' }: { size: number; left: number; 
   );
 }
 
-function Plate({ l, t, w, h, r, tone = 'cool' }: { l: number; t: number; w: number; h: number; r: number; tone?: Tone }) {
+function Plate({ l, t, w, h, r, tint }: { l: number; t: number; w: number; h: number; r: number; tint: string }) {
   return (
     <div
       style={{
@@ -194,7 +192,7 @@ function Plate({ l, t, w, h, r, tone = 'cool' }: { l: number; t: number; w: numb
         borderRadius: r,
         overflow: 'hidden',
         boxShadow: `0 ${Math.max(2, h * 0.09)}px ${Math.max(4, h * 0.2)}px rgba(10,8,18,0.3)`,
-        background: PLATE_TINT[tone],
+        background: plateGradient(tint),
       }}
     >
       <div style={{ position: 'absolute', left: 0, top: 0, right: 0, height: 1.5, background: 'rgba(255,255,255,0.45)' }} />
@@ -254,47 +252,42 @@ function Dot({ size, left, top }: { size: number; left: number; top: number }) {
   );
 }
 
-function CameraModule({ style, width: W, height: H }: { style: CamStyle; width: number; height: number }) {
+function CameraModule({ style, width: W, height: H, tint }: { style: CamStyle; width: number; height: number; tint: string }) {
   if (style === 'ip17-plateau') {
-    // Triple lens, full-width plateau (17 Pro / Pro Max) — lens cluster on the
-    // left, flash/mic/LiDAR on the right, spanning nearly the whole case width.
     const bx = W * 0.05, by = H * 0.035, bw = W * 0.9, bh = W * 0.22;
     const s = bh * 0.9, sx = bx + bh * 0.14, sy = by + (bh - s) / 2, ld = s * 0.4;
     const rx = bx + bw * 0.7;
     return (
       <>
-        <Plate l={bx} t={by} w={bw} h={bh} r={bh * 0.4} />
+        <Plate l={bx} t={by} w={bw} h={bh} r={bh * 0.4} tint={tint} />
         <div style={{ position: 'absolute', left: sx, top: sy, width: s, height: s, borderRadius: s * 0.28, background: 'rgba(10,8,14,0.26)', border: '1.5px solid rgba(255,255,255,0.22)' }} />
-        <Lens size={ld} left={sx + s * 0.08} top={sy + s * 0.08} />
-        <Lens size={ld} left={sx + s * 0.08} top={sy + s * 0.5} />
-        <Lens size={ld} left={sx + s * 0.5} top={sy + s * 0.29} />
+        <Lens size={ld} left={sx + s * 0.08} top={sy + s * 0.08} tint={tint} />
+        <Lens size={ld} left={sx + s * 0.08} top={sy + s * 0.5} tint={tint} />
+        <Lens size={ld} left={sx + s * 0.5} top={sy + s * 0.29} tint={tint} />
         <Flash size={s * 0.32} left={rx} top={by + bh * 0.16} />
-        <Lens size={s * 0.26} left={rx + s * 0.02} top={by + bh * 0.52} />
+        <Lens size={s * 0.26} left={rx + s * 0.02} top={by + bh * 0.52} tint={tint} />
         <Dot size={s * 0.12} left={rx + s * 0.44} top={by + bh * 0.42} />
       </>
     );
   }
   if (style === 'ip17-bar') {
-    // Dual lens, wide horizontal bar (base 17) — same plateau language as Pro
-    // but shorter and with only 2 lenses side by side, no LiDAR.
     const bx = W * 0.05, by = H * 0.035, bw = W * 0.8, bh = W * 0.16, ld = bh * 0.68;
     return (
       <>
-        <Plate l={bx} t={by} w={bw} h={bh} r={bh * 0.46} />
-        <Lens size={ld} left={bx + bh * 0.16} top={by + (bh - ld) / 2} />
-        <Lens size={ld} left={bx + bh * 0.16 + ld * 1.15} top={by + (bh - ld) / 2} />
+        <Plate l={bx} t={by} w={bw} h={bh} r={bh * 0.46} tint={tint} />
+        <Lens size={ld} left={bx + bh * 0.16} top={by + (bh - ld) / 2} tint={tint} />
+        <Lens size={ld} left={bx + bh * 0.16 + ld * 1.15} top={by + (bh - ld) / 2} tint={tint} />
         <Flash size={bh * 0.32} left={bx + bw * 0.72} top={by + bh * 0.34} />
         <Dot size={bh * 0.14} left={bx + bw * 0.85} top={by + bh * 0.43} />
       </>
     );
   }
   if (style === 'ip17-air') {
-    // Single lens, shorter bar (thin body, still bar-shaped but not full-width).
     const pw = W * 0.62, ph = W * 0.17, px = W * 0.05, py = H * 0.04, ld = ph * 0.72;
     return (
       <>
-        <Plate l={px} t={py} w={pw} h={ph} r={ph * 0.5} />
-        <Lens size={ld} left={px + ph * 0.16} top={py + ph * 0.14} />
+        <Plate l={px} t={py} w={pw} h={ph} r={ph * 0.5} tint={tint} />
+        <Lens size={ld} left={px + ph * 0.16} top={py + ph * 0.14} tint={tint} />
         <Flash size={ph * 0.34} left={px + pw * 0.68} top={py + ph * 0.32} />
         <Dot size={ph * 0.16} left={px + pw * 0.86} top={py + ph * 0.42} />
       </>
@@ -305,9 +298,9 @@ function CameraModule({ style, width: W, height: H }: { style: CamStyle; width: 
     const lx = px + s * 0.13;
     return (
       <>
-        <Plate l={px} t={py} w={s} h={sh} r={s * 0.34} />
-        <Lens size={ld} left={lx} top={py + s * 0.12} />
-        <Lens size={ld} left={lx} top={py + sh - ld - s * 0.12} />
+        <Plate l={px} t={py} w={s} h={sh} r={s * 0.34} tint={tint} />
+        <Lens size={ld} left={lx} top={py + s * 0.12} tint={tint} />
+        <Lens size={ld} left={lx} top={py + sh - ld - s * 0.12} tint={tint} />
         <Flash size={s * 0.2} left={px + s * 0.64} top={py + s * 0.22} />
       </>
     );
@@ -316,10 +309,10 @@ function CameraModule({ style, width: W, height: H }: { style: CamStyle; width: 
     const s = W * 0.42, px = W * 0.05, py = H * 0.035, ld = s * 0.4;
     return (
       <>
-        <Plate l={px} t={py} w={s} h={s} r={s * 0.28} />
-        <Lens size={ld} left={px + s * 0.08} top={py + s * 0.08} />
-        <Lens size={ld} left={px + s * 0.08} top={py + s * 0.5} />
-        <Lens size={ld} left={px + s * 0.5} top={py + s * 0.29} />
+        <Plate l={px} t={py} w={s} h={s} r={s * 0.28} tint={tint} />
+        <Lens size={ld} left={px + s * 0.08} top={py + s * 0.08} tint={tint} />
+        <Lens size={ld} left={px + s * 0.08} top={py + s * 0.5} tint={tint} />
+        <Lens size={ld} left={px + s * 0.5} top={py + s * 0.29} tint={tint} />
         <Dot size={ld * 0.3} left={px + s * 0.76} top={py + s * 0.15} />
         <Flash size={ld * 0.4} left={px + s * 0.74} top={py + s * 0.56} />
       </>
@@ -329,24 +322,24 @@ function CameraModule({ style, width: W, height: H }: { style: CamStyle; width: 
     const s = W * 0.27, px = W * 0.05, py = H * 0.04, sh = s * 1.12, ld = s * 0.48;
     return (
       <>
-        <Plate l={px} t={py} w={s} h={sh} r={s * 0.32} />
-        <Lens size={ld} left={px + s * 0.1} top={py + s * 0.1} />
-        <Lens size={ld} left={px + s - ld - s * 0.1} top={py + sh - ld - s * 0.1} />
+        <Plate l={px} t={py} w={s} h={sh} r={s * 0.32} tint={tint} />
+        <Lens size={ld} left={px + s * 0.1} top={py + s * 0.1} tint={tint} />
+        <Lens size={ld} left={px + s - ld - s * 0.1} top={py + sh - ld - s * 0.1} tint={tint} />
       </>
     );
   }
   if (style === 'ip-single') {
     const ld = W * 0.13;
-    return <Lens size={ld} left={W * 0.06} top={H * 0.045} />;
+    return <Lens size={ld} left={W * 0.06} top={H * 0.045} tint={tint} />;
   }
   if (style === 'samsung') {
     const ld = W * 0.11, lx = W * 0.07, ty = H * 0.05, gap = ld * 1.28;
     return (
       <>
-        <Lens size={ld} left={lx} top={ty} tone="glossy" />
-        <Lens size={ld} left={lx} top={ty + gap} tone="glossy" />
-        <Lens size={ld} left={lx} top={ty + gap * 2} tone="glossy" />
-        <Lens size={ld * 0.4} left={lx + ld * 1.3} top={ty + gap * 0.4} tone="glossy" />
+        <Lens size={ld} left={lx} top={ty} tint={tint} />
+        <Lens size={ld} left={lx} top={ty + gap} tint={tint} />
+        <Lens size={ld} left={lx} top={ty + gap * 2} tint={tint} />
+        <Lens size={ld * 0.4} left={lx + ld * 1.3} top={ty + gap * 0.4} tint={tint} />
       </>
     );
   }
@@ -354,9 +347,9 @@ function CameraModule({ style, width: W, height: H }: { style: CamStyle; width: 
     const bx = W * 0.05, by = H * 0.075, bw = W * 0.9, bh = W * 0.13, ld = bh * 0.7;
     return (
       <>
-        <Plate l={bx} t={by} w={bw} h={bh} r={bh * 0.5} tone="matte" />
-        <Lens size={ld} left={bx + bw * 0.04} top={by + bh * 0.15} tone="matte" />
-        <Lens size={ld} left={bx + bw * 0.04 + ld * 1.2} top={by + bh * 0.15} tone="matte" />
+        <Plate l={bx} t={by} w={bw} h={bh} r={bh * 0.5} tint={tint} />
+        <Lens size={ld} left={bx + bw * 0.04} top={by + bh * 0.15} tint={tint} />
+        <Lens size={ld} left={bx + bw * 0.04 + ld * 1.2} top={by + bh * 0.15} tint={tint} />
         <div style={{ position: 'absolute', left: bx + bw * 0.78, top: by + bh * 0.28, width: ld * 1.3, height: ld * 0.5, borderRadius: ld * 0.25, background: '#15121c', border: '1px solid rgba(150,150,180,0.7)' }} />
       </>
     );
@@ -364,10 +357,10 @@ function CameraModule({ style, width: W, height: H }: { style: CamStyle; width: 
   const s = W * 0.3, px = W * 0.06, py = H * 0.04, ld = s * 0.4;
   return (
     <>
-      <Plate l={px} t={py} w={s} h={s} r={s * 0.3} />
-      <Lens size={ld} left={px + s * 0.12} top={py + s * 0.12} />
-      <Lens size={ld} left={px + s * 0.5} top={py + s * 0.12} />
-      <Lens size={ld} left={px + s * 0.12} top={py + s * 0.5} />
+      <Plate l={px} t={py} w={s} h={s} r={s * 0.3} tint={tint} />
+      <Lens size={ld} left={px + s * 0.12} top={py + s * 0.12} tint={tint} />
+      <Lens size={ld} left={px + s * 0.5} top={py + s * 0.12} tint={tint} />
+      <Lens size={ld} left={px + s * 0.12} top={py + s * 0.5} tint={tint} />
     </>
   );
 }
