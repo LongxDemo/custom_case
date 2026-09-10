@@ -189,6 +189,8 @@ function FrontPageEditor() {
 }
 
 /* ───────────────────────── Designs ───────────────────────── */
+const DESIGN_STATUSES = ['new', 'contacted', 'done'];
+
 function Designs() {
   const [designs, setDesigns] = useState<DesignRow[]>(mockDesigns);
   useEffect(() => {
@@ -196,10 +198,40 @@ function Designs() {
     supabase.from('designs').select('*').order('created_at', { ascending: false }).then(({ data }) => data && setDesigns(data as DesignRow[]));
   }, []);
 
+  const setStatus = async (id: string, status: string) => {
+    setDesigns((ds) => ds.map((d) => (d.id === id ? { ...d, status: status as DesignRow['status'] } : d)));
+    if (supabase) await supabase.from('designs').update({ status }).eq('id', id);
+  };
+
+  const inbox = designs.filter((d) => d.contact_email);
+
   return (
     <>
       <h1 className="page-title">Customer Designs</h1>
       <p className="page-sub">Every case your customers have created — {designs.length} collected.</p>
+
+      {inbox.length > 0 && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <h3 style={{ marginTop: 0 }}>📩 Sent from the storefront — needs follow-up</h3>
+          <div className="design-grid">
+            {inbox.map((d) => (
+              <div className="design-cell" key={d.id}>
+                <CasePreview modelId={d.model_id} background={d.background} layers={d.layers} width={150} />
+                <div className="design-meta">
+                  {MODELS[d.model_id ?? '']?.name ?? d.model_id}<br />
+                  <strong>{d.contact_name}</strong><br />
+                  {d.contact_email}{d.contact_phone ? ` · ${d.contact_phone}` : ''}<br />
+                  {d.note && <em>"{d.note}"</em>}
+                </div>
+                <select className="status" value={d.status ?? 'new'} onChange={(e) => setStatus(d.id, e.target.value)}>
+                  {DESIGN_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {designs.length === 0 ? (
         <div className="empty">No designs yet 🐰</div>
       ) : (

@@ -12,6 +12,12 @@ export type DesignRow = {
   background: CaseBackground | null;
   layers: Layer[];
   preview_url: string | null;
+  // Set when submitted via the storefront's "send to Casey" flow (no checkout).
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  note: string | null;
+  status: 'new' | 'contacted' | 'done' | null;
   created_at: string;
 };
 

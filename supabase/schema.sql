@@ -86,14 +86,27 @@ insert into front_page (id) values (1) on conflict (id) do nothing;
 -- Customer designs (collected — guest or logged-in)
 -- ─────────────────────────────────────────────────────────────
 create table if not exists designs (
-  id           uuid primary key default gen_random_uuid(),
-  user_id      uuid references auth.users(id) on delete set null, -- null = guest
-  model_id     text,
-  background   jsonb,
-  layers       jsonb not null default '[]',
-  preview_url  text,                        -- rendered PNG in storage
-  created_at   timestamptz not null default now()
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid references auth.users(id) on delete set null, -- null = guest
+  model_id       text,
+  background     jsonb,
+  layers         jsonb not null default '[]',
+  preview_url    text,                        -- rendered PNG in storage
+  -- Storefront "send to Casey" submissions have no checkout — contact info
+  -- lets the admin follow up manually to sort printing/shipping/pickup.
+  contact_name   text,
+  contact_email  text,
+  contact_phone  text,
+  note           text,
+  status         text not null default 'new', -- 'new' | 'contacted' | 'done'
+  created_at     timestamptz not null default now()
 );
+-- Safe to re-run on an already-provisioned project.
+alter table designs add column if not exists contact_name text;
+alter table designs add column if not exists contact_email text;
+alter table designs add column if not exists contact_phone text;
+alter table designs add column if not exists note text;
+alter table designs add column if not exists status text not null default 'new';
 
 -- ─────────────────────────────────────────────────────────────
 -- Orders
