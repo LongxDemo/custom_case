@@ -3,7 +3,7 @@ import { CameraModule, CasePreview, camStyleFor } from './components/CasePreview
 import { EditableLayer } from './components/EditableLayer';
 import { useDesign } from './hooks/useDesign';
 import { backgrounds, stickerPacks, templates as staticTemplates, BASE_PRICE_CENTS } from './mock';
-import { CANVAS_BASE, MODELS, phoneModels, platformOf } from './lib/types';
+import { CANVAS_BASE, MODELS, phoneModels, platformOf, sizeForModel } from './lib/types';
 import type { Platform, Template, TextLayer } from './lib/types';
 import { hasSupabase, supabase } from './lib/supabase';
 
@@ -184,8 +184,7 @@ function Editor({ design, onBack }: { design: ReturnType<typeof useDesign>; onBa
   const [draftText, setDraftText] = useState('');
   const [sendModal, setSendModal] = useState(false);
 
-  const canvasW = 300;
-  const canvasH = canvasW / model.aspect;
+  const { width: canvasW, height: canvasH } = sizeForModel(model, 300);
   const scale = canvasW / CANVAS_BASE;
   const radius = canvasW * 0.14;
   const selected = d.layers.find((l) => l.id === selectedId) ?? null;

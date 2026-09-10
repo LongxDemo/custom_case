@@ -1,4 +1,4 @@
-import { CANVAS_BASE, MODELS } from '../lib/types';
+import { CANVAS_BASE, MODELS, sizeForModel } from '../lib/types';
 import type { CaseBackground, Layer, PhoneModel } from '../lib/types';
 
 export function CasePreview({
@@ -10,19 +10,20 @@ export function CasePreview({
   background: CaseBackground | null;
   layers: Layer[];
   modelId: string | null;
+  /** Render width for the WIDEST phone in the catalog — other models scale down proportionally (real relative size, not a fixed box). */
   width: number;
 }) {
   const model = (modelId && MODELS[modelId]) || MODELS.ip15pm;
-  const height = width / model.aspect;
-  const scale = width / CANVAS_BASE;
-  const radius = width * 0.14;
+  const { width: renderWidth, height } = sizeForModel(model, width);
+  const scale = renderWidth / CANVAS_BASE;
+  const radius = renderWidth * 0.14;
   const colors = background?.colors?.length ? background.colors : ['#FFF5FA', '#FFE9F4'];
   const ordered = [...(layers || [])].sort((a, b) => a.z - b.z);
 
   return (
     <div
       style={{
-        width,
+        width: renderWidth,
         height,
         borderRadius: radius,
         position: 'relative',
@@ -35,7 +36,7 @@ export function CasePreview({
       {ordered.map((l) => (
         <LayerView key={l.id} layer={l} scale={scale} />
       ))}
-      <CameraModule style={camStyleFor(model)} width={width} height={height} />
+      <CameraModule style={camStyleFor(model)} width={renderWidth} height={height} />
       {/* glossy printed-case sheen — matches the mobile app's case preview */}
       <div
         style={{
