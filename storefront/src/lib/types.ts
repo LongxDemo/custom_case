@@ -32,6 +32,15 @@ export type Template = {
   layers: LayerSpec[];
 };
 
+// Admin-controlled home page content (front_page table, single row id=1).
+export type FrontPage = {
+  hero_title: string;
+  hero_subtitle: string;
+  hero_cta: string;
+  banner_text: string | null;
+  featured_template_ids: string[];
+};
+
 // Real body dimensions in mm (not just aspect ratio) so case previews can be
 // sized relative to each other like real phones — a Pro Max renders bigger
 // than an SE, not just a different shape. See sizeForModel() below.

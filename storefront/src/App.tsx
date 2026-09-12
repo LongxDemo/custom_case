@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { toBlob } from 'html-to-image';
 import { CameraModule, CasePreview, camStyleFor } from './components/CasePreview';
 import { EditableLayer } from './components/EditableLayer';
 import { useDesign } from './hooks/useDesign';
 import { backgrounds, stickerPacks, templates as staticTemplates, BASE_PRICE_CENTS } from './mock';
 import { CANVAS_BASE, MODELS, phoneModels, platformOf, sizeForModel } from './lib/types';
-import type { Platform, Template, TextLayer } from './lib/types';
-import { hasSupabase, supabase } from './lib/supabase';
+import type { FrontPage, Layer, Platform, Template, TextLayer } from './lib/types';
+import { supabase } from './lib/supabase';
 
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 
@@ -21,6 +22,8 @@ export default function App() {
   };
   const openTemplate = (t: Template) => {
     design.startFromTemplate(t);
+    // Fire-and-forget popularity bump (drives the "tried" bars in the admin).
+    supabase?.rpc('increment_template_uses', { p_template_id: t.id }).then(() => undefined);
     setView('editor');
   };
 
@@ -37,6 +40,14 @@ export default function App() {
 
 /* ───────────────────────── Home ───────────────────────── */
 
+const DEFAULT_FRONT_PAGE: FrontPage = {
+  hero_title: 'Design it.\nPrint it.\nLove it.',
+  hero_subtitle: '100% you, 100% Casey 💗',
+  hero_cta: '✨ Start designing',
+  banner_text: null,
+  featured_template_ids: [],
+};
+
 function Home({
   onBlank,
   onTemplate,
@@ -49,6 +60,7 @@ function Home({
   const [platform, setPlatform] = useState<Platform>('ios');
   const modelsForPlatform = phoneModels.filter((m) => platformOf(m) === platform);
   const [galleryTemplates, setGalleryTemplates] = useState<Template[]>(staticTemplates);
+  const [fp, setFp] = useState<FrontPage>(DEFAULT_FRONT_PAGE);
 
   useEffect(() => {
     if (!supabase) return;
@@ -60,7 +72,20 @@ function Home({
       .then(({ data }) => {
         if (data && data.length) setGalleryTemplates(data as unknown as Template[]);
       });
+    supabase
+      .from('front_page')
+      .select('*')
+      .eq('id', 1)
+      .maybeSingle()
+      .then(({ data }) => data && setFp(data as FrontPage));
   }, []);
+
+  // Admin-picked featured templates lead the gallery, in the admin's order.
+  const rank = (t: Template) => {
+    const i = fp.featured_template_ids.indexOf(t.id);
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  const orderedTemplates = [...galleryTemplates].sort((a, b) => rank(a) - rank(b));
 
   return (
     <>
@@ -71,12 +96,14 @@ function Home({
         </div>
       </div>
 
+      {fp.banner_text && <div className="notice" style={{ margin: '0 16px 10px' }}>📣 {fp.banner_text}</div>}
+
       <div className="hero">
         <div className="hero-blob" />
         <span className="hero-pill">DIY PHONE CASE</span>
-        <div className="hero-title">Design it.<br />Print it.<br />Love it.</div>
-        <div className="hero-sub">100% you, 100% Casey 💗</div>
-        <button className="btn soft" style={{ marginTop: 14 }} onClick={onBlank}>✨ Start designing</button>
+        <div className="hero-title" style={{ whiteSpace: 'pre-line' }}>{fp.hero_title}</div>
+        <div className="hero-sub">{fp.hero_subtitle}</div>
+        <button className="btn soft" style={{ marginTop: 14 }} onClick={onBlank}>{fp.hero_cta}</button>
         <div className="hero-bunny">🐰</div>
       </div>
 
@@ -103,7 +130,7 @@ function Home({
           <button className="section-action" onClick={onBlank}>Blank case</button>
         </div>
         <div className="hscroll">
-          {galleryTemplates.map((t) => (
+          {orderedTemplates.map((t) => (
             <button key={t.id} className="tpl-card" onClick={() => onTemplate(t)}>
               <CasePreview
                 modelId={phoneModels[0].id}
@@ -224,7 +251,7 @@ function Editor({ design, onBack }: { design: ReturnType<typeof useDesign>; onBa
           <p className="editor-title">Casey Studio</p>
           <p className="editor-subtitle">{model.brand} {model.name}</p>
         </div>
-        <button className="send-btn" onClick={() => setSendModal(true)}>Send to Casey →</button>
+        <button className="send-btn" onClick={() => { select(null); setSendModal(true); }}>Send to Casey →</button>
       </div>
 
       <div className="price-tag">from {money(BASE_PRICE_CENTS)}</div>
@@ -234,7 +261,7 @@ function Editor({ design, onBack }: { design: ReturnType<typeof useDesign>; onBa
           <div
             style={{
               position: 'absolute', inset: 0,
-              background: `linear-gradient(135deg, ${d.background.colors[0]}, ${d.background.colors[d.background.colors.length - 1]})`,
+              background: `radial-gradient(120% 90% at 26% 10%, rgba(255,255,255,0.25), rgba(255,255,255,0) 55%), linear-gradient(135deg, ${d.background.colors[0]}, ${d.background.colors[d.background.colors.length - 1]})`,
             }}
           />
           {ordered.map((l) => (
@@ -243,6 +270,12 @@ function Editor({ design, onBack }: { design: ReturnType<typeof useDesign>; onBa
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
             <CameraModule style={camStyleFor(model)} width={canvasW} height={canvasH} tint={d.background.colors[0]} />
           </div>
+          <div
+            style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0) 38%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 62%)',
+            }}
+          />
         </div>
         {d.layers.length === 0 && <p className="panel-hint" style={{ position: 'absolute', bottom: 8 }}>Add stickers, text or a photo 👇</p>}
       </div>
@@ -340,7 +373,15 @@ function Editor({ design, onBack }: { design: ReturnType<typeof useDesign>; onBa
         </div>
       )}
 
-      {sendModal && <SendModal design={d} onClose={() => setSendModal(false)} onSent={onBack} />}
+      {sendModal && (
+        <SendModal
+          design={d}
+          modelLabel={`${model.brand} ${model.name}`}
+          canvasRef={canvasRef}
+          onClose={() => setSendModal(false)}
+          onSent={onBack}
+        />
+      )}
     </>
   );
 }
@@ -384,32 +425,106 @@ function ModelPicker({ modelId, onSetModel }: { modelId: string; onSetModel: (id
 
 /* ───────────────────────── Send to Casey ───────────────────────── */
 
-function SendModal({ design, onClose, onSent }: { design: ReturnType<typeof useDesign>['design']; onClose: () => void; onSent: () => void }) {
+/** Move any base64 photo layers into Supabase Storage and swap the data URL
+ *  for the public URL, so the designs row stays small. */
+async function uploadPhotoLayers(layers: Layer[]): Promise<Layer[]> {
+  if (!supabase) return layers;
+  const out: Layer[] = [];
+  for (const l of layers) {
+    if (l.kind !== 'image' || !l.uri.startsWith('data:')) {
+      out.push(l);
+      continue;
+    }
+    const blob = await (await fetch(l.uri)).blob();
+    const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from('design-photos').upload(path, blob, { contentType: blob.type });
+    if (error) throw new Error(`photo upload — ${error.message}`);
+    const { data } = supabase.storage.from('design-photos').getPublicUrl(path);
+    out.push({ ...l, uri: data.publicUrl });
+  }
+  return out;
+}
+
+function SendModal({
+  design,
+  modelLabel,
+  canvasRef,
+  onClose,
+  onSent,
+}: {
+  design: ReturnType<typeof useDesign>['design'];
+  modelLabel: string;
+  canvasRef: React.RefObject<HTMLDivElement | null>;
+  onClose: () => void;
+  onSent: () => void;
+}) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sendError, setSendError] = useState('');
 
   const valid = name.trim().length > 0 && email.includes('@');
 
   const submit = async () => {
     setSending(true);
-    if (supabase) {
-      await supabase.from('designs').insert({
-        model_id: design.modelId,
-        background: design.background,
-        layers: design.layers,
-        contact_name: name.trim(),
-        contact_email: email.trim(),
-        contact_phone: phone.trim() || null,
-        note: note.trim() || null,
-        status: 'new',
-      });
+    setSendError('');
+    try {
+      const form = new FormData();
+      form.append('name', name.trim());
+      form.append('email', email.trim());
+      form.append('phone', phone.trim());
+      form.append('note', note.trim());
+      form.append('model', modelLabel);
+
+      // Snapshot of the finished design, straight off the editor canvas.
+      if (canvasRef.current) {
+        const preview = await toBlob(canvasRef.current, { pixelRatio: 3 });
+        if (preview) form.append('preview', preview, 'design.png');
+      }
+      // Customer's uploaded photos at original quality, for printing.
+      let n = 0;
+      for (const l of design.layers) {
+        if (l.kind === 'image' && l.uri.startsWith('data:')) {
+          form.append(`photo_${n}`, await (await fetch(l.uri)).blob(), `photo-${n + 1}.png`);
+          n++;
+        }
+      }
+
+      const res = await fetch('/api/send', { method: 'POST', body: form });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? `request failed (${res.status})`);
+      }
+
+      // Backup copy into Supabase when configured — Telegram already has the
+      // design, so a failure here shouldn't fail the customer's send.
+      if (supabase) {
+        try {
+          const layers = await uploadPhotoLayers(design.layers);
+          await supabase.from('designs').insert({
+            model_id: design.modelId,
+            background: design.background,
+            layers,
+            contact_name: name.trim(),
+            contact_email: email.trim(),
+            contact_phone: phone.trim() || null,
+            note: note.trim() || null,
+            status: 'new',
+          });
+        } catch (e) {
+          console.warn('Supabase backup failed:', e);
+        }
+      }
+      setSent(true);
+    } catch (e) {
+      setSendError(e instanceof Error ? e.message : 'unexpected error');
+    } finally {
+      setSending(false);
     }
-    setSending(false);
-    setSent(true);
   };
 
   const finish = () => {
@@ -431,7 +546,11 @@ function SendModal({ design, onClose, onSent }: { design: ReturnType<typeof useD
           <>
             <h3 className="modal-title">Send your design ✨</h3>
             <p className="modal-sub">No payment here — we'll follow up with you directly to sort out printing and delivery.</p>
-            {!hasSupabase && <div className="notice" style={{ margin: '0 0 10px' }}>🔌 Demo mode — this won't actually reach anyone yet.</div>}
+            {sendError && (
+              <div className="notice" style={{ margin: '0 0 10px', color: 'var(--danger)' }}>
+                ⚠️ Your design didn't send ({sendError}). Please try again.
+              </div>
+            )}
             <label>Your name</label>
             <input className="f" value={name} onChange={(e) => setName(e.target.value)} placeholder="Casey Bunny" />
             <label>Email</label>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import { CasePreview } from './components/CasePreview';
 import { hasSupabase, supabase } from './lib/supabase';
 import { MODELS } from './lib/types';
@@ -11,26 +12,43 @@ const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 
 export default function App() {
   const [session, setSession] = useState<boolean>(!hasSupabase); // demo mode = logged in
+  const [isAdmin, setIsAdmin] = useState<boolean>(!hasSupabase);
   const [ready, setReady] = useState<boolean>(!hasSupabase);
   const [page, setPage] = useState<Page>('overview');
   const [email, setEmail] = useState<string>('demo mode');
 
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(!!data.session);
-      setEmail(data.session?.user.email ?? '');
-      setReady(true);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    // A valid login is not enough — the dashboard is for rows in `admins` only.
+    const apply = async (s: Session | null) => {
       setSession(!!s);
       setEmail(s?.user.email ?? '');
-    });
+      if (s) {
+        const { data } = await supabase!.rpc('am_i_admin');
+        setIsAdmin(data === true);
+      } else {
+        setIsAdmin(false);
+      }
+      setReady(true);
+    };
+    supabase.auth.getSession().then(({ data }) => apply(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => void apply(s));
     return () => sub.subscription.unsubscribe();
   }, []);
 
   if (!ready) return <div className="login-wrap"><div className="login-card"><h1>casey</h1><p>Loading…</p></div></div>;
   if (!session) return <Login />;
+  if (!isAdmin) {
+    return (
+      <div className="login-wrap">
+        <div className="login-card">
+          <h1>casey</h1>
+          <p>{email} is signed in but is not an admin of this dashboard.</p>
+          {supabase && <button className="btn" onClick={() => supabase!.auth.signOut()}>↩︎ Sign out</button>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -148,7 +166,13 @@ function FrontPageEditor() {
   }, []);
 
   const save = async () => {
-    if (supabase) await supabase.from('front_page').update({ ...fp, updated_at: new Date().toISOString() }).eq('id', 1);
+    if (supabase) {
+      const { error } = await supabase.from('front_page').update({ ...fp, updated_at: new Date().toISOString() }).eq('id', 1);
+      if (error) {
+        window.alert(`Save failed: ${error.message}`);
+        return;
+      }
+    }
     setSaved(true); setTimeout(() => setSaved(false), 1800);
   };
 
@@ -199,8 +223,15 @@ function Designs() {
   }, []);
 
   const setStatus = async (id: string, status: string) => {
+    const prev = designs;
     setDesigns((ds) => ds.map((d) => (d.id === id ? { ...d, status: status as DesignRow['status'] } : d)));
-    if (supabase) await supabase.from('designs').update({ status }).eq('id', id);
+    if (supabase) {
+      const { error } = await supabase.from('designs').update({ status }).eq('id', id);
+      if (error) {
+        setDesigns(prev);
+        window.alert(`Couldn't update status: ${error.message}`);
+      }
+    }
   };
 
   const inbox = designs.filter((d) => d.contact_email);
@@ -286,14 +317,28 @@ function Gallery() {
   }, []);
 
   const patch = async (id: string, changes: Partial<TemplateRow>) => {
+    const prev = templates;
     setTemplates((ts) => ts.map((t) => (t.id === id ? { ...t, ...changes } : t)));
-    if (supabase) await supabase.from('templates').update(changes).eq('id', id);
+    if (supabase) {
+      const { error } = await supabase.from('templates').update(changes).eq('id', id);
+      if (error) {
+        setTemplates(prev);
+        window.alert(`Couldn't update the style: ${error.message}`);
+      }
+    }
   };
 
   const remove = async (id: string) => {
     if (!window.confirm('Remove this style from the gallery?')) return;
+    const prev = templates;
     setTemplates((ts) => ts.filter((t) => t.id !== id));
-    if (supabase) await supabase.from('templates').delete().eq('id', id);
+    if (supabase) {
+      const { error } = await supabase.from('templates').delete().eq('id', id);
+      if (error) {
+        setTemplates(prev);
+        window.alert(`Couldn't remove the style: ${error.message}`);
+      }
+    }
   };
 
   const sorted = [...templates].sort((a, b) => a.sort - b.sort);
@@ -359,8 +404,15 @@ function Orders() {
   }, []);
 
   const setStatus = async (id: string, status: string) => {
+    const prev = orders;
     setOrders((os) => os.map((o) => (o.id === id ? { ...o, status } : o)));
-    if (supabase) await supabase.from('orders').update({ status }).eq('id', id);
+    if (supabase) {
+      const { error } = await supabase.from('orders').update({ status }).eq('id', id);
+      if (error) {
+        setOrders(prev);
+        window.alert(`Couldn't update the order: ${error.message}`);
+      }
+    }
   };
 
   const total = useMemo(() => orders.reduce((a, o) => a + o.total_cents, 0), [orders]);

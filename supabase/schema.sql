@@ -148,7 +148,10 @@ create table if not exists admins (
   created_at  timestamptz not null default now()
 );
 
-create or replace function is_admin() returns boolean language sql stable as $$
+-- security definer so RLS policies can call this without recursing through
+-- the admins table's own policy (which itself depends on is_admin()).
+create or replace function is_admin() returns boolean
+language sql security definer set search_path = public stable as $$
   select exists (select 1 from admins where user_id = auth.uid());
 $$;
 
@@ -198,9 +201,12 @@ begin
   end loop;
 end $$;
 
--- Designs: anyone can insert (guest submissions); owner or admin can read;
+-- Designs: anyone can insert (guest submissions); owner or admin can read.
+-- Guest rows (user_id null) are NOT publicly readable — they carry customer
+-- contact info, and only the admin needs to see them.
 create policy designs_insert on designs for insert with check (true);
-create policy designs_read_own on designs for select using (user_id = auth.uid() or user_id is null or is_admin());
+drop policy if exists designs_read_own on designs;
+create policy designs_read_own on designs for select using (auth.uid() is not null and user_id = auth.uid());
 create policy designs_admin_all on designs for all using (is_admin()) with check (is_admin());
 
 -- Orders: customer can create + see their own; admin sees all
@@ -212,3 +218,17 @@ create policy order_items_read on order_items for select using (is_admin() or ex
 
 -- Admins table: readable by admins
 create policy admins_read on admins for select using (is_admin());
+
+-- ─────────────────────────────────────────────────────────────
+-- Storage: customer design photos
+-- ─────────────────────────────────────────────────────────────
+-- Uploaded photos live here (public URLs stored in designs.layers) instead of
+-- base64 data URLs inside the jsonb, which bloats rows and page loads.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('design-photos', 'design-photos', true, 10485760, array['image/png','image/jpeg','image/webp','image/gif'])
+on conflict (id) do nothing;
+
+drop policy if exists design_photos_insert on storage.objects;
+create policy design_photos_insert on storage.objects
+  for insert to anon, authenticated
+  with check (bucket_id = 'design-photos');
